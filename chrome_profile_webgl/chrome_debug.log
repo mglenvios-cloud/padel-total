@@ -1,0 +1,17 @@
+[1100:8736:0615/163248.556:INFO:components\enterprise\browser\controller\chrome_browser_cloud_management_controller.cc:239] No machine level policy manager exists.
+[10576:12372:0615/163248.601:ERROR:ui\gl\init\gl_factory.cc:110] Requested GL implementation (gl=none,angle=none) not found in allowed implementations: [(gl=egl-angle,angle=default)].
+[10576:12372:0615/163248.602:ERROR:components\viz\service\main\viz_main_impl.cc:190] Exiting GPU process due to errors during initialization
+[1100:6712:0615/163248.658:WARNING:chrome\browser\extensions\external_pref_loader.cc:294] You are using an old-style extension deployment method (external_extensions.json), which will soon be deprecated. (see http://developer.chrome.com/docs/extensions/how-to/distribute/install-extensions)
+[1100:4024:0615/163248.750:ERROR:components\viz\host\persistent_cache_sandboxed_file_factory.cc:151] Failed to open persistent cache files in directory "C:\Users\Claudio\Desktop\PADEL\chrome_profile_webgl\GPUPersistentCache\DawnGraphiteCache\QFRPRRKRKWZNTFMPUJZIPW2HOZ5QE2WL": El proceso no tiene acceso al archivo porque está siendo utilizado por otro proceso. (0x20)
+[1100:8736:0615/163248.800:WARNING:chrome\browser\extensions\external_registry_loader_win.cc:236] Error observing HKLM: Acceso denegado. (0x5)
+[1156:1960:0615/163248.809:ERROR:ui\gl\init\gl_factory.cc:110] Requested GL implementation (gl=none,angle=none) not found in allowed implementations: [(gl=egl-angle,angle=default)].
+[1156:1960:0615/163248.811:ERROR:components\viz\service\main\viz_main_impl.cc:190] Exiting GPU process due to errors during initialization
+[1100:13384:0615/163248.846:WARNING:chrome\browser\media\router\discovery\discovery_network_list_win.cc:229] Failed to open WLAN handle: No se ha iniciado el servicio. (0x426)
+[1656:12984:0615/163248.974:ERROR:ui\gl\direct_composition_support.cc:247] GetGpuDriverOverlayInfo: Failed to retrieve video device
+[1656:12984:0615/163248.980:WARNING:ui\gl\direct_composition_support.cc:1211] QueryInterface to IDCompositionDevice4 failed: Interfaz no compatible (0x80004002)
+[12560:11028:0615/163249.026:ERROR:gpu\ipc\client\command_buffer_proxy_impl.cc:285] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.
+[1100:13412:0615/163251.331:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[1100:13412:0615/163251.331:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[1100:13412:0615/163251.341:ERROR:google_apis\gcm\engine\mcs_client.cc:702]   Error code: 401  Error message: Authentication Failed: wrong_secret
+[1100:13412:0615/163251.341:ERROR:google_apis\gcm\engine\mcs_client.cc:704] Failed to log in to GCM, resetting connection.
+[1100:13412:0615/163251.346:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR

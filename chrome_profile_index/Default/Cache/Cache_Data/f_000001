@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Padel Champions Online</title>
+  <meta name="description" content="El simulador de pádel más realista. Juega partidas 2v2 con IA avanzada, torneos y ranking mundial.">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap');
+
+    /* ─── RESET & BASE ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #0a0a1a;
+      --primary:   #00C853;
+      --primary-d: #00963d;
+      --secondary: #FFD700;
+      --surface:   rgba(255,255,255,0.06);
+      --border:    rgba(0,200,83,0.3);
+      --text:      #f0f0f0;
+      --muted:     #888;
+      --blue:      #2196F3;
+      --red:       #f44336;
+    }
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ─── ANIMATED BACKGROUND ────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 30%, rgba(0,200,83,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 70%, rgba(255,215,0,0.05) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 50% at 50% 50%, rgba(33,150,243,0.04) 0%, transparent 70%);
+      animation: bgShift 30s ease-in-out infinite alternate;
+      z-index: 0;
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,200,83,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,83,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridPulse 8s ease-in-out infinite;
+      z-index: 0;
+      pointer-events: none;
+    }
+    @keyframes bgShift {
+      0%   { opacity: 1; transform: scale(1) translate(0,0); }
+      33%  { transform: scale(1.05) translate(2%, 1%); }
+      66%  { transform: scale(0.98) translate(-1%, 2%); }
+      100% { opacity: 1; transform: scale(1.03) translate(1%, -1%); }
+    }
+    @keyframes gridPulse {
+      0%, 100% { opacity: 0.7; }
+      50%       { opacity: 1; }
+    }
+
+    /* ─── PARTICLES ────────────────────────────────── */
+    #particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      bottom: -20px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #00C853, #007a32);
+      box-shadow: 0 0 8px rgba(0,200,83,0.6);
+      animation: floatUp linear infinite;
+      opacity: 0;
+    }
+    @keyframes floatUp {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+      10%  { opacity: 0.7; }
+      90%  { opacity: 0.3; }
+      100% { transform: translateY(-110vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ─── TOAST ─────────────────────────────────────── */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast {
+      padding: 14px 22px;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      opacity: 0;
+      transform: translateX(120px);
+      transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+      backdrop-filter: blur(12px);
+      max-width: 320px;
+    }
+    .toast.show { opacity: 1; transform: translateX(0); }
+    .toast-success { background: rgba(0,200,83,0.2); border: 1px solid rgba(0,200,83,0.5); color: #00C853; }
+    .toast-warning { background: rgba(255,215,0,0.15); border: 1px solid rgba(255,215,0,0.5); color: #FFD700; }
+    .toast-info    { background: rgba(33,150,243,0.15); border: 1px solid rgba(33,150,243,0.5); color: #64B5F6; }
+    .toast-error   { background: rgba(244,67,54,0.15); border: 1px solid rgba(244,67,54,0.5); color: #ef9a9a; }
+
+    /* ─── SCREENS ────────────────────────────────────── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 10;
+      opacity: 0;
+      transform: translateY(24px);
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      padding: 24px 20px 40px;
+    }
+    .screen.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+
+    /* ─── GLASS CARD ──────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(0,200,83,0.2);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      padding: 20px;
+    }
+    .card:hover {
+      border-color: rgba(0,200,83,0.6);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 32px rgba(0,200,83,0.2);
+    }
+
+    /* ─── BUTTONS ─────────────────────────────────────── */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-d));
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      border: none;
+      border-radius: 12px;
+      padding: 16px 32px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      box-shadow: 0 4px 20px rgba(0,200,83,0.3);
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,200,83,0.5); }
+    .btn-primary:active { transform: translateY(-1px); }
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 28px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      backdrop-filter: blur(8px);
+    }
+    .btn-secondary:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,200,83,0.2); }
+    .btn-back {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-back:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+
+    /* ─── FORMS ───────────────────────────────────────── */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    input[type=text], input[type=number], select {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(0,200,83,0.3);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 12px 16px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,200,83,0.2); }
+    select option { background: #0f1a2e; color: var(--text); }
+
+    /* ─── RANGE SLIDER ────────────────────────────────── */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      outline: none;
+      padding: 0;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 8px rgba(0,200,83,0.5);
+      cursor: pointer;
+    }
+
+    /* ─── TOGGLE SWITCH ───────────────────────────────── */
+    .toggle-wrap { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+    .toggle-wrap span { font-size: 0.9rem; color: var(--text); }
+    .toggle { position: relative; width: 50px; height: 26px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.1);
+      border-radius: 13px;
+      cursor: pointer;
+      transition: 0.3s;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      left: 3px; top: 2px;
+      background: var(--muted);
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+    .toggle input:checked + .toggle-slider { background: rgba(0,200,83,0.3); border-color: var(--primary); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(24px); background: var(--primary); }
+
+    /* ─── SCREEN HEADER ───────────────────────────────── */
+    .screen-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      padding-top: 8px;
+    }
+    .screen-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* ─── XP BAR ─────────────────────────────────────── */
+    .xp-bar-wrap { background: rgba(255,255,255,0.1); border-radius: 8px; height: 8px; overflow: hidden; margin: 8px 0; }
+    .xp-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 8px;
+      transition: width 1s cubic-bezier(0.34,1.56,0.64,1);
+      animation: xpGlow 2s ease-in-out infinite;
+    }
+    @keyframes xpGlow {
+      0%, 100% { box-shadow: 0 0 4px rgba(0,200,83,0.4); }
+      50%       { box-shadow: 0 0 12px rgba(0,200,83,0.8); }
+    }
+
+    /* ─── TABS ────────────────────────────────────────── */
+    .tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn.active, .tab-btn:hover { background: rgba(0,200,83,0.15); border-color: var(--primary); color: var(--primary); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ─── TABLE ───────────────────────────────────────── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .data-table th {
+      padding: 10px 12px;
+      text-align: left;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .data-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .data-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .data-table tr.player-row td { background: rgba(0,200,83,0.06); box-shadow: inset 0 0 0 1px rgba(0,200,83,0.2); }
+
+    /* ─── SEPARATOR ───────────────────────────────────── */
+    .separator {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,200,83,0.4), transparent);
+      margin: 20px 0;
+      animation: sepPulse 3s ease-in-out infinite;
+    }
+    @keyframes sepPulse { 0%,100% { opacity:0.5; } 50% { opacity:1; } }
+
+    /* ════════════════════════════════════════════════════
+       SCREEN 1 – MAIN MENU
+    ════════════════════════════════════════════════════ */
+    #screen-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+    }
+    .version-badge {
+      position: fixed;
+      top: 16px;
+      right: 20px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.1em;
+      background: rgba(255,255,255,0.04);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .court-bg {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 0;
+      animation: courtZoom 20s ease-in-out infinite alternate;
+      background: radial-gradient(circle, rgba(10,10,26,0.25) 0%, rgba(10,10,26,0.93) 85%), url('padel_court_hero.png') no-repeat center center;
+      background-size: cover;
+      opacity: 0.25;
+    }
+    @keyframes courtZoom { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
+    .logo-area { position: relative; z-index: 2; margin-bottom: 32px; }
+    .logo-emoji { font-size: 3.5rem; display: block; margin-bottom: 8px; animation: bounceIcon 3s ease-in-out infinite; }
+    @keyframes bounceIcon { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    .logo-title {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      animation: logoGlow 2s ease-in-out infinite;
+      text-transform: uppercase;
+    }
+    @keyframes logoGlow {
+      0%,100% { filter: drop-shadow(0 0 8px rgba(0,200,83,0.4)); }
+      50%      { filter: drop-shadow(0 0 20px rgba(0,200,83,0.8)) drop-shadow(0 0 40px rgba(255,215,0,0.3)); }
+    }
+    .logo-online {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1rem, 3vw, 1.5rem);
+      color: var(--secondary);
+      letter-spacing: 0.8em;
+      text-indent: 0.8em;
+      margin-top: 4px;
+    }
+    .logo-tagline {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 10px;
+      font-weight: 300;
+      letter-spacing: 0.03em;
+    }
+    .main-nav {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 0 auto;
+    }
+    .main-nav .btn-secondary { height: 60px; font-size: 0.85rem; }
+    .greeting-bar {
+      position: relative;
+      z-index: 2;
+      margin-top: 28px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .greeting-bar .player-name-highlight { color: var(--primary); font-weight: 600; }
+    .copyright {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.68rem;
+      color: rgba(136,136,136,0.5);
+      white-space: nowrap;
+      z-index: 2;
+    }
+
+    /* ════════════════════════════════════════════════════
+       SCREEN 2 – GAME MODES
+    ════════════════════════════════════════════════════ */
+    .modes-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .mode-card {
+      cursor: pointer;
+      text-align: center;
+      padding: 28px 16px;
+      border-radius: 16px;
+      background: var(--surface);
+      border: 2px solid rgba(0,200,83,0.15);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .mode-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(0,200,83,0.04));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .mode-card:hover::before, .mode-card.selected::before { opacity: 1; }
+    .mode-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,200,83,0.2); border-color: rgba(0,200,83,0.5); }
+    .mode-card.selected { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), 0 12px 40px rgba(0,200,83,0.3); }
+    .mode-icon { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+    .mode-name { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); margin-bottom: 6px; }
+    .mode-desc { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+    .options-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; backdrop-filter: blur(10px); }
+    .options-title { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+    .stars-row { display: flex; gap: 8px; margin-bottom: 4px; }
+    .star { font-size: 1.5rem; cursor: pointer; transition: transform 0.15s, filter 0.15s; filter: grayscale(1) opacity(0.4); }
+    .star.active { filter: grayscale(0) drop-shadow(0 0 6px rgba(255,215,0,0.7)); transform: scale(1.15); }
+    .court-toggle { display: flex; gap: 8px; margin-top: 12px; }
+    .court-btn {
+      flex: 1; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04); color: var(--muted); cursor: pointer; transition: all 0.2s;
+      font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 600;
+    }
+    .court-btn.active { background: rgba(0,200,83,0.15); border-color: var(--primary); color: var(--primary); }
+    .btn-play-now {
+      background: linear-gradient(135deg, var(--primary), var(--primary-d));
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      border: none;
+      border-radius: 14px;
+      height: 65px;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      text-transform: uppercase;
+      transition: all 0.3s;
+      box-shadow: 0 4px 20px rgba(0,200,83,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-play-now::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 16px;
+      background: transparent;
+      border: 2px solid var(--primary);
+      animation: playPulse 1.5s ease-in-out infinite;
+      opacity: 0;
+    }
+    .btn-play-now.ready::after { opacity: 1; }
+    @keyframes playPulse { 0%,100% { transform: scale(1); opacity:0.8; } 50% { transform: scale(1.04); opacity: 0; } }
+    .btn-play-now:hover { transform: translateY(-3px); box-shadow: 0 10px 40px rgba(0,200,83,0.6); }
+
+    /* ════════════════════════════════════════════════════
+       SCREEN 3 – MY PLAYER
+    ════════════════════════════════════════════════════ */
+    .player-layout { display: flex; gap: 20px; align-items: flex-start; }
+    .player-left { width: 200px; flex-shrink: 0; }
+    .player-right { flex: 1; min-width: 0; }
+    .avatar-circle {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(0,200,83,0.3), rgba(255,215,0,0.2));
+      border: 3px solid var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--primary);
+      margin: 0 auto 12px;
+      box-shadow: 0 0 30px rgba(0,200,83,0.3);
+      transition: box-shadow 0.3s;
+    }
+    .avatar-circle:hover { box-shadow: 0 0 50px rgba(0,200,83,0.5); }
+    .avatar-name { text-align: center; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; }
+    .level-badge { display: inline-block; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #000; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; margin: 0 auto 8px; }
+    .xp-label { font-size: 0.7rem; color: var(--muted); text-align: center; margin-bottom: 2px; }
+    .stat-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 12px; }
+    .stat-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 8px 4px; text-align: center; }
+    .stat-val { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1rem; color: var(--primary); }
+    .stat-lbl { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .hand-toggle { display: flex; gap: 8px; }
+    .hand-btn {
+      flex: 1; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04); color: var(--muted); cursor: pointer; transition: all 0.2s;
+      font-size: 0.85rem; font-weight: 600; font-family: 'Inter', sans-serif;
+    }
+    .hand-btn.active { background: rgba(0,200,83,0.15); border-color: var(--primary); color: var(--primary); }
+
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+    .racket-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+    .racket-card {
+      flex: 1; min-width: 100px;
+      padding: 14px 10px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 2px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      transition: all 0.25s;
+      text-align: center;
+    }
+    .racket-card:hover { border-color: rgba(0,200,83,0.4); transform: translateY(-2px); }
+    .racket-card.selected { border-color: var(--primary); box-shadow: 0 0 20px rgba(0,200,83,0.3); background: rgba(0,200,83,0.08); }
+    .racket-icon { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+    .racket-name { font-family: 'Orbitron', sans-serif; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); margin-bottom: 3px; }
+    .racket-stat { font-size: 0.65rem; color: var(--muted); }
+
+    .outfit-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+    .swatch {
+      width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+      border: 3px solid transparent; transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .swatch:hover { transform: scale(1.15); }
+    .swatch.selected { border-color: #fff; box-shadow: 0 0 12px rgba(255,255,255,0.5); transform: scale(1.15); }
+
+    /* ════════════════════════════════════════════════════
+       SCREEN 4 – TOURNAMENT
+    ════════════════════════════════════════════════════ */
+    .league-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .next-match-card { background: rgba(0,200,83,0.07); border: 1px solid rgba(0,200,83,0.25); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+    .next-match-label { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--primary); margin-bottom: 10px; }
+    .match-vs { display: flex; align-items: center; justify-content: center; gap: 16px; }
+    .match-team { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.9rem; }
+    .match-vs-text { font-size: 0.75rem; color: var(--muted); font-weight: 300; }
+
+    /* BRACKET */
+    .bracket-wrap { display: flex; gap: 0; overflow-x: auto; padding-bottom: 10px; }
+    .bracket-round { display: flex; flex-direction: column; justify-content: space-around; min-width: 160px; padding: 0 10px; position: relative; }
+    .bracket-round-title { font-family: 'Orbitron', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 12px; }
+    .bracket-match { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 8px 10px; margin: 6px 0; }
+    .bracket-team { padding: 4px 0; font-size: 0.78rem; color: var(--text); display: flex; align-items: center; gap: 6px; }
+    .bracket-team.winner { color: var(--primary); font-weight: 600; }
+    .bracket-team.player-team { color: var(--secondary); font-weight: 700; }
+    .bracket-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 3px 0; }
+
+    /* CAREER */
+    .career-path { display: flex; flex-direction: column; gap: 12px; }
+    .career-step { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); transition: all 0.2s; }
+    .career-step.current { background: rgba(0,200,83,0.08); border-color: rgba(0,200,83,0.3); }
+    .career-step.done { border-color: rgba(0,200,83,0.2); }
+    .career-badge { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; background: rgba(255,255,255,0.06); flex-shrink: 0; }
+    .career-badge.done { background: rgba(0,200,83,0.2); }
+    .career-badge.current { background: rgba(0,200,83,0.3); box-shadow: 0 0 12px rgba(0,200,83,0.4); }
+    .career-info { flex: 1; }
+    .career-name { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.85rem; margin-bottom: 3px; }
+    .career-desc { font-size: 0.75rem; color: var(--muted); }
+
+    /* MUNDIAL */
+    .mundial-overlay { position: relative; }
+    .lock-overlay { position: absolute; inset: 0; background: rgba(10,10,26,0.85); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; z-index: 5; }
+    .lock-icon { font-size: 2.5rem; }
+    .lock-msg { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.9rem; color: var(--secondary); text-align: center; }
+    .lock-sub { font-size: 0.8rem; color: var(--muted); text-align: center; }
+
+    /* ════════════════════════════════════════════════════
+       SCREEN 5 – RANKINGS
+    ════════════════════════════════════════════════════ */
+    .rank-medal { font-size: 1.1rem; }
+    .rank-num { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.9rem; }
+    .rank-gold   td { color: #FFD700; }
+    .rank-silver td { color: #C0C0C0; }
+    .rank-bronze td { color: #CD7F32; }
+
+    /* ════════════════════════════════════════════════════
+       SCREEN 6 – SETTINGS
+    ════════════════════════════════════════════════════ */
+    .settings-section { margin-bottom: 20px; }
+    .settings-section-title { font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--primary); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(0,200,83,0.2); }
+    .settings-panel { background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px 20px; }
+    .quality-btns { display: flex; gap: 8px; }
+    .quality-btn {
+      flex: 1; padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04); color: var(--muted); cursor: pointer; transition: all 0.2s;
+      font-size: 0.8rem; font-weight: 600;
+    }
+    .quality-btn.active { background: rgba(0,200,83,0.15); border-color: var(--primary); color: var(--primary); }
+    .keybinds-table { width: 100%; font-size: 0.82rem; }
+    .keybinds-table tr { border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .keybinds-table td { padding: 8px 6px; }
+    .keybinds-table td:first-child { color: var(--muted); }
+    .keybinds-table td:last-child { text-align: right; }
+    .key-badge { display: inline-block; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 2px 8px; font-family: 'Orbitron', sans-serif; font-size: 0.65rem; font-weight: 700; color: var(--text); }
+    .lang-btns { display: flex; gap: 10px; }
+    .lang-btn {
+      flex: 1; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04); color: var(--text); cursor: pointer; transition: all 0.2s;
+      font-size: 1rem; text-align: center;
+    }
+    .lang-btn.active { border-color: var(--primary); background: rgba(0,200,83,0.1); }
+    .slider-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+    .slider-row span:first-child { flex: 0 0 130px; font-size: 0.88rem; color: var(--text); }
+    .slider-row input[type=range] { flex: 1; }
+    .slider-row .slider-val { flex: 0 0 34px; text-align: right; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: var(--primary); }
+
+    /* ─── RESPONSIVE ─────────────────────────────────── */
+    @media (max-width: 640px) {
+      .modes-grid { grid-template-columns: 1fr; }
+      .player-layout { flex-direction: column; }
+      .player-left { width: 100%; }
+      .racket-grid { gap: 6px; }
+      .racket-card { min-width: 80px; }
+      .bracket-wrap { gap: 0; }
+      .bracket-round { min-width: 130px; }
+      .screen-title { font-size: 1.1rem; }
+    }
+    @media (max-width: 400px) {
+      .logo-title { font-size: 1.6rem; }
+      .logo-online { letter-spacing: 0.3em; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PARTICLES -->
+  <div id="particles"></div>
+
+  <!-- TOASTS -->
+  <div id="toast-container"></div>
+
+  <!-- ═══ SCREEN 1 – MAIN MENU ═══ -->
+  <div id="screen-main" class="screen active">
+    <span class="version-badge">v1.0</span>
+
+    <div class="court-bg">
+      <svg viewBox="0 0 800 450" width="90%" height="90%" xmlns="http://www.w3.org/2000/svg" style="opacity:0.05">
+        <rect x="60" y="40" width="680" height="370" fill="none" stroke="white" stroke-width="3"/>
+        <line x1="60" y1="225" x2="740" y2="225" stroke="white" stroke-width="3"/>
+        <line x1="400" y1="40" x2="400" y2="410" stroke="white" stroke-width="1.5"/>
+        <line x1="230" y1="40" x2="230" y2="410" stroke="white" stroke-width="1.5"/>
+        <line x1="570" y1="40" x2="570" y2="410" stroke="white" stroke-width="1.5"/>
+        <line x1="230" y1="225" x2="570" y2="225" stroke="white" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <div class="logo-area">
+      <span class="logo-emoji">🎾</span>
+      <div class="logo-title">PADEL CHAMPIONS</div>
+      <div class="logo-online">ONLINE</div>
+      <p class="logo-tagline">El simulador más realista de pádel 2vs2</p>
+      <div class="separator" style="margin-top:20px;"></div>
+    </div>
+
+    <nav class="main-nav">
+      <button class="btn-secondary" onclick="showScreen('screen-modes')">🎮 &nbsp;JUGAR</button>
+      <button class="btn-secondary" onclick="showScreen('screen-player')">👤 &nbsp;MI JUGADOR</button>
+      <button class="btn-secondary" onclick="showScreen('screen-tournament')">🏆 &nbsp;TORNEOS</button>
+      <button class="btn-secondary" onclick="showScreen('screen-rankings')">📊 &nbsp;RANKING</button>
+      <button class="btn-secondary" onclick="showScreen('screen-settings')">⚙️ &nbsp;AJUSTES</button>
+    </nav>
+
+    <div class="greeting-bar">
+      <p id="player-greeting">Crea tu jugador para comenzar</p>
+    </div>
+
+    <div class="copyright">© 2026 Padel Champions Online · Todos los derechos reservados · v1.0.0</div>
+  </div>
+
+  <!-- ═══ SCREEN 2 – GAME MODES ═══ -->
+  <div id="screen-modes" class="screen">
+    <div style="max-width:700px;margin:0 auto;padding-top:10px;">
+      <div class="screen-header">
+        <button class="btn-back" onclick="goBack()">← Volver</button>
+        <h2 class="screen-title">Seleccionar Modo</h2>
+      </div>
+
+      <div class="modes-grid">
+        <div class="mode-card selected" id="mode-quick" onclick="selectMode('quick',this)">
+          <span class="mode-icon">🎯</span>
+          <div class="mode-name">Partida Rápida</div>
+          <div class="mode-desc">2 vs 2 con IA avanzada</div>
+        </div>
+        <div class="mode-card" id="mode-ai" onclick="selectMode('ai',this)">
+          <span class="mode-icon">🤖</span>
+          <div class="mode-name">IA vs IA</div>
+          <div class="mode-desc">Modo espectador, mira jugar a la IA</div>
+        </div>
+        <div class="mode-card" id="mode-training" onclick="selectMode('training',this)">
+          <span class="mode-icon">🎓</span>
+          <div class="mode-name">Entrenamiento</div>
+          <div class="mode-desc">Practica tus golpes y mejora</div>
+        </div>
+        <div class="mode-card" id="mode-tournament" onclick="selectMode('tournament',this)">
+          <span class="mode-icon">🏆</span>
+          <div class="mode-name">Torneo</div>
+          <div class="mode-desc">Competición oficial con ranking</div>
+        </div>
+      </div>
+
+      <div class="options-panel">
+        <div class="options-title">Dificultad</div>
+        <div class="stars-row" id="stars-row">
+          <span class="star active" onclick="setDifficulty(1)">★</span>
+          <span class="star active" onclick="setDifficulty(2)">★</span>
+          <span class="star active" onclick="setDifficulty(3)">★</span>
+          <span class="star" onclick="setDifficulty(4)">★</span>
+          <span class="star" onclick="setDifficulty(5)">★</span>
+        </div>
+        <div class="options-title" style="margin-top:16px;">Tipo de Cancha</div>
+        <div class="court-toggle">
+          <button class="court-btn active" id="court-indoor" onclick="setCourt('indoor')">🏟️ Indoor</button>
+          <button class="court-btn" id="court-outdoor" onclick="setCourt('outdoor')">☀️ Outdoor</button>
+        </div>
+      </div>
+
+      <button class="btn-play-now ready" id="btn-play-now" onclick="startGame(selectedMode)">⚡ JUGAR AHORA</button>
+      <p id="modes-warning" style="text-align:center;color:var(--secondary);font-size:0.8rem;margin-top:10px;display:none;">⚠️ Crea tu jugador primero en "Mi Jugador"</p>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 3 – MY PLAYER ═══ -->
+  <div id="screen-player" class="screen">
+    <div style="max-width:900px;margin:0 auto;padding-top:10px;">
+      <div class="screen-header">
+        <button class="btn-back" onclick="goBack()">← Volver</button>
+        <h2 class="screen-title">Mi Jugador</h2>
+      </div>
+
+      <div class="player-layout">
+        <div class="player-left">
+          <div class="card" style="text-align:center;padding:20px 14px;">
+            <div class="avatar-circle" id="avatar-display">?</div>
+            <div class="avatar-name" id="avatar-name">Nuevo Jugador</div>
+            <div style="text-align:center;margin-bottom:4px;">
+              <span class="level-badge" id="avatar-level">LVL 1</span>
+            </div>
+            <div class="xp-label" id="xp-label">0 / 1000 XP</div>
+            <div class="xp-bar-wrap"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
+            <div class="stat-cards" style="margin-top:14px;">
+              <div class="stat-card"><div class="stat-val" id="stat-w">0</div><div class="stat-lbl">V</div></div>
+              <div class="stat-card"><div class="stat-val" id="stat-l">0</div><div class="stat-lbl">D</div></div>
+              <div class="stat-card"><div class="stat-val" id="stat-eff">0%</div><div class="stat-lbl">EFE</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="player-right">
+          <div class="card" style="margin-bottom:16px;">
+            <div class="form-group">
+              <label>Nombre</label>
+              <input type="text" id="player-name" placeholder="Tu nombre" maxlength="30" oninput="updateAvatarPreview()">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="form-group">
+                <label>Edad</label>
+                <input type="number" id="player-age" min="16" max="45" placeholder="25">
+              </div>
+              <div class="form-group">
+                <label>Mano</label>
+                <div class="hand-toggle">
+                  <button class="hand-btn active" data-hand="right" onclick="setHand('right',this)">Derecha</button>
+                  <button class="hand-btn" data-hand="left" onclick="setHand('left',this)">Izquierda</button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Nacionalidad</label>
+              <select id="player-nationality">
+                <option value="AR">🇦🇷 Argentina</option>
+                <option value="ES">🇪🇸 España</option>
+                <option value="BR">🇧🇷 Brasil</option>
+                <option value="MX">🇲🇽 México</option>
+                <option value="UY">🇺🇾 Uruguay</option>
+                <option value="CL">🇨🇱 Chile</option>
+                <option value="PY">🇵🇾 Paraguay</option>
+                <option value="PE">🇵🇪 Perú</option>
+                <option value="CO">🇨🇴 Colombia</option>
+                <option value="VE">🇻🇪 Venezuela</option>
+                <option value="US">🇺🇸 USA</option>
+                <option value="GB">🇬🇧 UK</option>
+                <option value="FR">🇫🇷 Francia</option>
+                <option value="IT">🇮🇹 Italia</option>
+                <option value="DE">🇩🇪 Alemania</option>
+                <option value="AU">🇦🇺 Australia</option>
+                <option value="PT">🇵🇹 Portugal</option>
+                <option value="NL">🇳🇱 Países Bajos</option>
+                <option value="BE">🇧🇪 Bélgica</option>
+                <option value="SE">🇸🇪 Suecia</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Estilo de Juego</label>
+              <select id="player-style">
+                <option value="aggressive">Agresivo</option>
+                <option value="defensive">Defensivo</option>
+                <option value="balanced" selected>Equilibrado</option>
+                <option value="serve">Saque y Red</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px;">
+            <div class="section-title">🏓 Paleta</div>
+            <div class="racket-grid">
+              <div class="racket-card selected" onclick="selectRacket(0,this)">
+                <span class="racket-icon">🔥</span>
+                <div class="racket-name">Power Pro</div>
+                <div class="racket-stat">Potencia</div>
+              </div>
+              <div class="racket-card" onclick="selectRacket(1,this)">
+                <span class="racket-icon">⚡</span>
+                <div class="racket-name">Speed Ctrl</div>
+                <div class="racket-stat">Velocidad</div>
+              </div>
+              <div class="racket-card" onclick="selectRacket(2,this)">
+                <span class="racket-icon">💎</span>
+                <div class="racket-name">Diamond</div>
+                <div class="racket-stat">Precisión</div>
+              </div>
+              <div class="racket-card" onclick="selectRacket(3,this)">
+                <span class="racket-icon">🏆</span>
+                <div class="racket-name">Classic</div>
+                <div class="racket-stat">Equilibrio</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px;">
+            <div class="section-title">👕 Equipación</div>
+            <div class="outfit-swatches" id="outfit-swatches">
+              <div class="swatch selected" style="background:#2196F3;" onclick="selectOutfit(0,this)"></div>
+              <div class="swatch" style="background:#f44336;" onclick="selectOutfit(1,this)"></div>
+              <div class="swatch" style="background:#00C853;" onclick="selectOutfit(2,this)"></div>
+              <div class="swatch" style="background:#9C27B0;" onclick="selectOutfit(3,this)"></div>
+              <div class="swatch" style="background:#FF9800;" onclick="selectOutfit(4,this)"></div>
+              <div class="swatch" style="background:#333;" onclick="selectOutfit(5,this)"></div>
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="savePlayer()">💾 GUARDAR JUGADOR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 4 – TOURNAMENT ═══ -->
+  <div id="screen-tournament" class="screen">
+    <div style="max-width:900px;margin:0 auto;padding-top:10px;">
+      <div class="screen-header">
+        <button class="btn-back" onclick="goBack()">← Volver</button>
+        <h2 class="screen-title">Torneos</h2>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tourn','liga',this)">⚽ Liga</button>
+        <button class="tab-btn" onclick="switchTab('tourn','copa',this)">🥊 Copa</button>
+        <button class="tab-btn" onclick="switchTab('tourn','mundial',this)">🌍 Mundial</button>
+        <button class="tab-btn" onclick="switchTab('tourn','carrera',this)">🚀 Carrera</button>
+      </div>
+
+      <div class="tab-panel active" id="tourn-liga">
+        <div class="next-match-card">
+          <div class="next-match-label">⚡ Próximo Partido</div>
+          <div class="match-vs">
+            <span class="match-team" id="next-match-player" style="color:var(--primary);">Tu Equipo</span>
+            <span class="match-vs-text">VS</span>
+            <span class="match-team" id="next-match-opp" style="color:var(--red);">Las Panteras</span>
+          </div>
+        </div>
+        <div class="league-table-wrap" style="margin-bottom:16px;">
+          <table class="data-table">
+            <thead>
+              <tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>V</th><th>D</th><th>Pts</th></tr>
+            </thead>
+            <tbody id="league-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-primary" onclick="startGame('tournament')">⚡ JUGAR PARTIDO</button>
+      </div>
+
+      <div class="tab-panel" id="tourn-copa">
+        <p style="color:var(--muted);font-size:0.82rem;margin-bottom:16px;">Eliminación directa · 8 equipos</p>
+        <div class="card">
+          <div class="bracket-wrap" id="bracket-wrap"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tourn-mundial">
+        <div class="card mundial-overlay" style="min-height:300px;position:relative;overflow:hidden;">
+          <div style="padding:20px;opacity:0.3;">
+            <p style="font-family:'Orbitron',sans-serif;font-size:1.1rem;text-align:center;letter-spacing:0.2em;margin-top:60px;">🌍 MUNDIAL DE PÁDEL</p>
+            <p style="text-align:center;color:var(--muted);margin-top:8px;">64 países · 512 jugadores</p>
+          </div>
+          <div class="lock-overlay">
+            <span class="lock-icon">🔒</span>
+            <span class="lock-msg">Próximamente</span>
+            <span class="lock-sub">Necesitas alcanzar el Nivel 10+ para desbloquear</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tourn-carrera">
+        <div class="career-path" id="career-path"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 5 – RANKINGS ═══ -->
+  <div id="screen-rankings" class="screen">
+    <div style="max-width:800px;margin:0 auto;padding-top:10px;">
+      <div class="screen-header">
+        <button class="btn-back" onclick="goBack()">← Volver</button>
+        <h2 class="screen-title">Ranking Mundial</h2>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('rank','global',this)">🌍 Global</button>
+        <button class="tab-btn" onclick="switchTab('rank','nacional',this)">🏴 Nacional</button>
+        <button class="tab-btn" onclick="switchTab('rank','nivel',this)">⭐ Por Nivel</button>
+      </div>
+
+      <div class="tab-panel active" id="rank-global">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table class="data-table">
+            <thead><tr><th style="width:40px;">#</th><th>Jugador</th><th style="width:40px;">País</th><th style="width:50px;">Niv</th><th style="width:50px;">V</th><th style="width:50px;">D</th><th style="width:70px;">Pts</th></tr></thead>
+            <tbody id="rank-body-global"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="rank-nacional">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table class="data-table">
+            <thead><tr><th>#</th><th>Jugador</th><th>País</th><th>Niv</th><th>V</th><th>D</th><th>Pts</th></tr></thead>
+            <tbody id="rank-body-nacional"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="rank-nivel">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table class="data-table">
+            <thead><tr><th>#</th><th>Jugador</th><th>País</th><th>Niv</th><th>V</th><th>D</th><th>Pts</th></tr></thead>
+            <tbody id="rank-body-nivel"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 6 – SETTINGS ═══ -->
+  <div id="screen-settings" class="screen">
+    <div style="max-width:700px;margin:0 auto;padding-top:10px;">
+      <div class="screen-header">
+        <button class="btn-back" onclick="goBack()">← Volver</button>
+        <h2 class="screen-title">Ajustes</h2>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">🔊 Audio</div>
+        <div class="settings-panel">
+          <div class="slider-row">
+            <span>Volumen General</span>
+            <input type="range" min="0" max="100" value="75" id="vol-general"
+              oninput="document.getElementById('vol-general-val').textContent=this.value;saveSetting('volGeneral',this.value)">
+            <span class="slider-val" id="vol-general-val">75</span>
+          </div>
+          <div class="toggle-wrap">
+            <span>Efectos de Sonido</span>
+            <label class="toggle"><input type="checkbox" checked id="toggle-sfx" onchange="saveSetting('sfx',this.checked)"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <span>Público / Ambiente</span>
+            <label class="toggle"><input type="checkbox" checked id="toggle-crowd" onchange="saveSetting('crowd',this.checked)"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <span>Música de Fondo</span>
+            <label class="toggle"><input type="checkbox" checked id="toggle-music" onchange="saveSetting('music',this.checked)"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">🖥️ Gráficos</div>
+        <div class="settings-panel">
+          <div style="margin-bottom:12px;">
+            <div style="font-size:0.85rem;color:var(--muted);margin-bottom:8px;">Calidad de Gráficos</div>
+            <div class="quality-btns">
+              <button class="quality-btn" onclick="setQuality('low',this)">Baja</button>
+              <button class="quality-btn active" onclick="setQuality('medium',this)">Media</button>
+              <button class="quality-btn" onclick="setQuality('high',this)">Alta</button>
+            </div>
+          </div>
+          <div class="toggle-wrap">
+            <span>Sombras</span>
+            <label class="toggle"><input type="checkbox" checked id="toggle-shadows" onchange="saveSetting('shadows',this.checked)"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <span>Efectos de Partículas</span>
+            <label class="toggle"><input type="checkbox" checked id="toggle-particles-setting" onchange="saveSetting('particles',this.checked)"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">🎮 Controles</div>
+        <div class="settings-panel">
+          <table class="keybinds-table">
+            <tr><td>Moverse</td><td><span class="key-badge">W A S D</span> / <span class="key-badge">↑ ↓ ← →</span></td></tr>
+            <tr><td>Golpe Normal</td><td><span class="key-badge">ESPACIO</span></td></tr>
+            <tr><td>Globo / Lob</td><td><span class="key-badge">Q</span></td></tr>
+            <tr><td>Volea / Remate</td><td><span class="key-badge">E</span></td></tr>
+            <tr><td>Pausa</td><td><span class="key-badge">ESC</span></td></tr>
+            <tr><td>Cambiar Cámara</td><td><span class="key-badge">C</span></td></tr>
+          </table>
+          <div style="margin-top:12px;padding:10px;background:rgba(33,150,243,0.07);border-radius:10px;border:1px solid rgba(33,150,243,0.2);">
+            <p style="font-size:0.8rem;color:var(--blue);">📱 Móvil: Joystick virtual izquierdo para moverse · Botones derecha para golpes</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">🌐 Idioma</div>
+        <div class="settings-panel">
+          <div class="lang-btns">
+            <button class="lang-btn active" id="lang-es" onclick="setLang('es',this)">🇪🇸 Español</button>
+            <button class="lang-btn" id="lang-en" onclick="setLang('en',this)">🇺🇸 English</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">⚠️ Datos</div>
+        <div class="settings-panel">
+          <button class="btn-secondary" style="border-color:rgba(244,67,54,0.4);color:var(--red);" onclick="resetData()">🗑️ Borrar todos los datos</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ═══ STATE ═══ */
+    let screenHistory      = ['screen-main'];
+    let selectedMode       = 'quick';
+    let selectedDifficulty = 3;
+    let selectedCourt      = 'indoor';
+    let selectedRacket     = 0;
+    let selectedOutfit     = 0;
+
+    const SK = {
+      PLAYER:   'padelPlayerData',
+      SETTINGS: 'padelSettings',
+      MATCH:    'padelMatchConfig',
+      STATS:    'padelStats'
+    };
+
+    /* ═══ NAVIGATION ═══ */
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (id !== screenHistory[screenHistory.length - 1]) screenHistory.push(id);
+      if (id === 'screen-player')     populatePlayerForm();
+      if (id === 'screen-rankings')   generateRankings();
+      if (id === 'screen-tournament') buildTournament();
+    }
+    function goBack() {
+      if (screenHistory.length > 1) {
+        screenHistory.pop();
+        showScreen(screenHistory[screenHistory.length - 1]);
+      }
+    }
+
+    /* ═══ TABS ═══ */
+    function switchTab(group, tab, btn) {
+      document.querySelectorAll(`[id^="${group}-"]`).forEach(p => p.classList.remove('active'));
+      const t = document.getElementById(`${group}-${tab}`);
+      if (t) t.classList.add('active');
+      btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    /* ═══ TOAST ═══ */
+    function showToast(msg, type = 'info') {
+      const el = document.createElement('div');
+      el.className = `toast toast-${type}`;
+      el.textContent = msg;
+      document.getElementById('toast-container').appendChild(el);
+      requestAnimationFrame(() => setTimeout(() => el.classList.add('show'), 10));
+      setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 3000);
+    }
+
+    /* ═══ PARTICLES ═══ */
+    function spawnParticles() {
+      const c = document.getElementById('particles');
+      for (let i = 0; i < 14; i++) {
+        const b = document.createElement('div');
+        b.className = 'particle';
+        b.style.left = (Math.random() * 100) + '%';
+        b.style.animationDelay = (Math.random() * 10) + 's';
+        b.style.animationDuration = (7 + Math.random() * 9) + 's';
+        const sz = 6 + Math.random() * 10;
+        b.style.width = b.style.height = sz + 'px';
+        c.appendChild(b);
+      }
+    }
+
+    /* ═══ STORAGE ═══ */
+    function loadPlayer() {
+      try { return JSON.parse(localStorage.getItem(SK.PLAYER)); } catch { return null; }
+    }
+    function loadStats() {
+      try { return JSON.parse(localStorage.getItem(SK.STATS)) || { w:0, l:0, xp:0, level:1 }; }
+      catch { return { w:0, l:0, xp:0, level:1 }; }
+    }
+
+    /* ═══ PLAYER ═══ */
+    function savePlayer() {
+      const name = document.getElementById('player-name').value.trim();
+      if (!name) { showToast('Escribe tu nombre primero', 'warning'); return; }
+      const stats = loadStats();
+      const data  = {
+        name,
+        age:         parseInt(document.getElementById('player-age').value) || 25,
+        nationality: document.getElementById('player-nationality').value,
+        hand:        document.querySelector('.hand-btn.active')?.dataset.hand || 'right',
+        style:       document.getElementById('player-style').value,
+        racket:      selectedRacket,
+        outfit:      selectedOutfit,
+        xp:          stats.xp,
+        level:       stats.level
+      };
+      localStorage.setItem(SK.PLAYER, JSON.stringify(data));
+      showToast('¡Jugador guardado con éxito!', 'success');
+      updateMainGreeting(data);
+      updateAvatarDisplay(data);
+    }
+
+    function updateAvatarPreview() {
+      const val = document.getElementById('player-name').value.trim();
+      const ini = val ? val.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase() : '?';
+      document.getElementById('avatar-display').textContent = ini;
+      document.getElementById('avatar-name').textContent   = val || 'Nuevo Jugador';
+    }
+
+    function updateAvatarDisplay(p) {
+      if (!p) return;
+      const ini = p.name.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+      document.getElementById('avatar-display').textContent = ini;
+      document.getElementById('avatar-name').textContent   = p.name;
+    }
+
+    function populatePlayerForm() {
+      const p     = loadPlayer();
+      const stats = loadStats();
+      if (p) {
+        document.getElementById('player-name').value      = p.name || '';
+        document.getElementById('player-age').value       = p.age  || 25;
+        document.getElementById('player-nationality').value = p.nationality || 'AR';
+        document.getElementById('player-style').value     = p.style || 'balanced';
+        document.querySelectorAll('.hand-btn').forEach(b => b.classList.toggle('active', b.dataset.hand === (p.hand||'right')));
+        document.querySelectorAll('.racket-card').forEach((c,i) => c.classList.toggle('selected', i === (p.racket||0)));
+        document.querySelectorAll('.swatch').forEach((s,i) => s.classList.toggle('selected', i === (p.outfit||0)));
+        selectedRacket = p.racket || 0;
+        selectedOutfit = p.outfit || 0;
+        updateAvatarDisplay(p);
+      }
+      const level  = stats.level || 1;
+      const xp     = stats.xp    || 0;
+      const xpMax  = level * 1000;
+      const pct    = Math.min(100, Math.round((xp / xpMax) * 100));
+      document.getElementById('avatar-level').textContent = `LVL ${level}`;
+      document.getElementById('xp-label').textContent     = `${xp} / ${xpMax} XP`;
+      document.getElementById('xp-bar').style.width       = pct + '%';
+      document.getElementById('stat-w').textContent       = stats.w || 0;
+      document.getElementById('stat-l').textContent       = stats.l || 0;
+      const tot = (stats.w||0) + (stats.l||0);
+      document.getElementById('stat-eff').textContent     = tot > 0 ? Math.round(((stats.w||0)/tot)*100)+'%' : '0%';
+    }
+
+    function updateMainGreeting(p) {
+      const el = document.getElementById('player-greeting');
+      if (p && p.name) el.innerHTML = `Bienvenido/a, <span class="player-name-highlight">${p.name}</span>`;
+      else el.textContent = 'Crea tu jugador para comenzar';
+    }
+
+    /* ═══ GAME MODES ═══ */
+    function selectMode(mode, el) {
+      selectedMode = mode;
+      document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+    function setDifficulty(val) {
+      selectedDifficulty = val;
+      document.querySelectorAll('.star').forEach((s,i) => s.classList.toggle('active', i < val));
+    }
+    function setCourt(type) {
+      selectedCourt = type;
+      document.getElementById('court-indoor').classList.toggle('active', type === 'indoor');
+      document.getElementById('court-outdoor').classList.toggle('active', type === 'outdoor');
+    }
+    function startGame(mode) {
+      const p = loadPlayer();
+      if (!p || !p.name) {
+        showToast('¡Crea tu jugador primero!', 'warning');
+        document.getElementById('modes-warning').style.display = 'block';
+        setTimeout(() => showScreen('screen-player'), 1400);
+        return;
+      }
+      localStorage.setItem(SK.MATCH, JSON.stringify({ mode: mode || selectedMode, difficulty: selectedDifficulty, court: selectedCourt }));
+      showToast('¡Cargando partida...', 'info');
+      setTimeout(() => { window.location.href = 'game.html'; }, 800);
+    }
+
+    /* ═══ PLAYER CHOICES ═══ */
+    function setHand(hand, el) {
+      document.querySelectorAll('.hand-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function selectRacket(idx, el) {
+      selectedRacket = idx;
+      document.querySelectorAll('.racket-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+    function selectOutfit(idx, el) {
+      selectedOutfit = idx;
+      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    /* ═══ RANKINGS DATA ═══ */
+    const AI_PLAYERS = [
+      { name:'Carlos Fernández',  flag:'🇦🇷', nat:'AR', level:98, w:312, l:45,  pts:4521 },
+      { name:'Miguel Lamperti',   flag:'🇦🇷', nat:'AR', level:95, w:298, l:52,  pts:4312 },
+      { name:'Juan Martín Díaz',  flag:'🇪🇸', nat:'ES', level:93, w:287, l:61,  pts:4198 },
+      { name:'Fernando Beltrán',  flag:'🇪🇸', nat:'ES', level:91, w:271, l:69,  pts:3987 },
+      { name:'Pablo Lima',        flag:'🇧🇷', nat:'BR', level:89, w:255, l:75,  pts:3801 },
+      { name:'Alejandro Galán',   flag:'🇪🇸', nat:'ES', level:88, w:243, l:82,  pts:3654 },
+      { name:'Juan Lebrón',       flag:'🇪🇸', nat:'ES', level:86, w:231, l:91,  pts:3498 },
+      { name:'Matías Torres',     flag:'🇦🇷', nat:'AR', level:84, w:218, l:99,  pts:3321 },
+      { name:'Rodrigo Gutierrez', flag:'🇲🇽', nat:'MX', level:82, w:204, l:108, pts:3145 },
+      { name:'Lucas Bergamasco',  flag:'🇮🇹', nat:'IT', level:80, w:189, l:117, pts:2967 },
+      { name:'Antoine Salazar',   flag:'🇫🇷', nat:'FR', level:78, w:175, l:126, pts:2789 },
+      { name:'Marco Ferretti',    flag:'🇮🇹', nat:'IT', level:76, w:162, l:135, pts:2612 },
+      { name:'Sebastián Moreno',  flag:'🇨🇱', nat:'CL', level:74, w:149, l:144, pts:2435 },
+      { name:'Diego Castellano',  flag:'🇺🇾', nat:'UY', level:72, w:136, l:153, pts:2258 },
+      { name:'Nicolás Pavón',     flag:'🇦🇷', nat:'AR', level:70, w:124, l:162, pts:2081 },
+      { name:'James Harrison',    flag:'🇬🇧', nat:'GB', level:68, w:112, l:171, pts:1904 },
+      { name:'Pedro Vasquez',     flag:'🇵🇹', nat:'PT', level:66, w:100, l:180, pts:1727 },
+      { name:'Erik Lindström',    flag:'🇸🇪', nat:'SE', level:64, w:89,  l:189, pts:1550 },
+      { name:'Andrei Popescu',    flag:'🇷🇴', nat:'RO', level:62, w:78,  l:198, pts:1373 }
+    ];
+
+    const NAT_FLAG = {
+      AR:'🇦🇷',ES:'🇪🇸',BR:'🇧🇷',MX:'🇲🇽',UY:'🇺🇾',CL:'🇨🇱',
+      PY:'🇵🇾',PE:'🇵🇪',CO:'🇨🇴',VE:'🇻🇪',US:'🇺🇸',GB:'🇬🇧',
+      FR:'🇫🇷',IT:'🇮🇹',DE:'🇩🇪',AU:'🇦🇺',PT:'🇵🇹',NL:'🇳🇱',
+      BE:'🇧🇪',SE:'🇸🇪',RO:'🇷🇴'
+    };
+
+    function getPlayerRow() {
+      const p = loadPlayer(); const s = loadStats();
+      if (!p) return null;
+      return { name: p.name, flag: NAT_FLAG[p.nationality] || '🏳️', nat: p.nationality,
+               level: s.level || 1, w: s.w || 0, l: s.l || 0,
+               pts: (s.w||0)*15 + (s.level||1)*10, isPlayer: true };
+    }
+
+    function buildRankTable(tbodyId, rows) {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      const medals = ['🥇','🥈','🥉'];
+      tbody.innerHTML = rows.map((r, i) => {
+        const medal = i < 3 ? `<span class="rank-medal">${medals[i]}</span>` : '';
+        const cls   = r.isPlayer ? 'player-row' : i===0 ? 'rank-gold' : i===1 ? 'rank-silver' : i===2 ? 'rank-bronze' : '';
+        const nameStr = r.isPlayer ? `<strong style="color:var(--primary);">▶ ${r.name}</strong>` : r.name;
+        return `<tr class="${cls}">
+          <td>${medal}<span class="rank-num">${i+1}</span></td>
+          <td>${nameStr}</td>
+          <td style="font-size:1.1rem;">${r.flag}</td>
+          <td style="color:var(--secondary);font-family:'Orbitron',sans-serif;font-size:0.8rem;">${r.level}</td>
+          <td style="color:var(--primary);">${r.w}</td>
+          <td style="color:var(--red);">${r.l}</td>
+          <td style="font-family:'Orbitron',sans-serif;font-weight:700;">${r.pts.toLocaleString()}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function generateRankings() {
+      const pRow = getPlayerRow();
+      let global = [...AI_PLAYERS];
+      if (pRow) {
+        const idx = global.findIndex(r => r.pts < pRow.pts);
+        if (idx === -1) global.push(pRow); else global.splice(idx, 0, pRow);
+      }
+      buildRankTable('rank-body-global', global);
+
+      const pNat    = pRow ? pRow.nat : 'AR';
+      let nacional  = global.filter(r => r.nat === pNat);
+      if (nacional.length === 0) nacional = global.slice(0,5);
+      buildRankTable('rank-body-nacional', nacional);
+
+      const byLevel = [...global].sort((a,b) => b.level - a.level);
+      buildRankTable('rank-body-nivel', byLevel);
+    }
+
+    /* ═══ TOURNAMENT ═══ */
+    const LEAGUE_TEAMS = [
+      'Las Panteras','Los Toros','Team Solera','Madrid Warriors',
+      'Buenos Aires FC','Barcelona Padel','Rio Stars',
+      'Mexico City Champs','London Elite','Paris Masters'
+    ];
+
+    function buildTournament() { buildLeague(); buildBracket(); buildCareer(); }
+
+    function buildLeague() {
+      const p    = loadPlayer();
+      const pName = p ? `⭐ ${p.name}'s Team` : '⭐ Tu Equipo';
+      const teams = [pName, ...LEAGUE_TEAMS.slice(0,9)];
+      const standing = teams.map((name, i) => {
+        if (i === 0) return { name, pj:0, v:0, d:0, pts:0, isPlayer:true };
+        const v = Math.floor(Math.random()*7), d = Math.floor(Math.random()*5);
+        return { name, pj:v+d, v, d, pts:v*3 };
+      }).sort((a,b) => a.isPlayer ? 1 : b.isPlayer ? -1 : b.pts - a.pts);
+
+      const nonP = standing.filter(t => !t.isPlayer);
+      const playerR = standing.find(t => t.isPlayer);
+      nonP.push(playerR);
+      const sorted = nonP.sort((a,b) => b.pts - a.pts);
+
+      document.getElementById('league-body').innerHTML = sorted.map((t,i) => `
+        <tr class="${t.isPlayer?'player-row':''}">
+          <td style="font-family:'Orbitron',sans-serif;font-weight:700;">${i+1}</td>
+          <td>${t.isPlayer?`<strong style="color:var(--primary);">${t.name}</strong>`:t.name}</td>
+          <td>${t.pj}</td>
+          <td style="color:var(--primary);">${t.v}</td>
+          <td style="color:var(--red);">${t.d}</td>
+          <td style="font-family:'Orbitron',sans-serif;font-weight:700;color:var(--secondary);">${t.pts}</td>
+        </tr>`).join('');
+
+      const opp = LEAGUE_TEAMS[Math.floor(Math.random()*LEAGUE_TEAMS.length)];
+      document.getElementById('next-match-player').textContent = p ? `${p.name}'s Team` : 'Tu Equipo';
+      document.getElementById('next-match-opp').textContent    = opp;
+    }
+
+    function buildBracket() {
+      const p     = loadPlayer();
+      const pName = p ? p.name.split(' ')[0] : 'Tú';
+      const el    = document.getElementById('bracket-wrap');
+      if (!el) return;
+      const rounds = [
+        { title:'CUARTOS DE FINAL', matches:[[pName,'Las Panteras'],['Madrid Warriors','Los Toros'],['Buenos Aires FC','Rio Stars'],['London Elite','Paris Masters']], qf:true },
+        { title:'SEMIFINAL',        matches:[[pName,'Madrid Warriors'],['Buenos Aires FC','London Elite']] },
+        { title:'FINAL',            matches:[[pName,'Buenos Aires FC']] },
+        { title:'🏆 CAMPEÓN',       matches:[[pName]], champ:true }
+      ];
+      el.innerHTML = rounds.map(r => `
+        <div class="bracket-round">
+          <div class="bracket-round-title">${r.title}</div>
+          ${r.matches.map(m => r.champ
+            ? `<div class="bracket-match" style="border-color:rgba(255,215,0,0.5);background:rgba(255,215,0,0.06);"><div class="bracket-team winner" style="color:var(--secondary);">🏆 ${m[0]}</div></div>`
+            : `<div class="bracket-match">${m.map((t,i)=>{
+                const ip=t===pName, iw=i===0;
+                const c=ip?'player-team':iw?'winner':'';
+                return `<div class="bracket-team ${c}">${ip?'⭐ ':''}${t}</div>`;
+              }).join('<div class="bracket-divider"></div>')}</div>`
+          ).join('')}
+        </div>`).join('');
+    }
+
+    function buildCareer() {
+      const s = loadStats(); const lvl = s.level||1;
+      const stages = [
+        {name:'Rookie',   icon:'🌱', desc:'Nivel 1–9 · Aprende lo básico',         min:1,  max:9  },
+        {name:'Pro',      icon:'⚡', desc:'Nivel 10–29 · Torneo regional',          min:10, max:29 },
+        {name:'Elite',    icon:'💎', desc:'Nivel 30–59 · Circuito nacional',        min:30, max:59 },
+        {name:'Champion', icon:'🏆', desc:'Nivel 60–89 · Circuito internacional',   min:60, max:89 },
+        {name:'Legend',   icon:'👑', desc:'Nivel 90+ · Campeón del mundo',          min:90, max:999}
+      ];
+      document.getElementById('career-path').innerHTML = stages.map(s => {
+        const done=lvl>s.max, cur=lvl>=s.min&&lvl<=s.max;
+        return `<div class="career-step ${done?'done':cur?'current':''}">
+          <div class="career-badge ${done?'done':cur?'current':''}">${s.icon}</div>
+          <div class="career-info">
+            <div class="career-name" style="${cur?'color:var(--primary);':''}">${s.name}${cur?' ← Actual':''}${done?' ✓':''}</div>
+            <div class="career-desc">${s.desc}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    /* ═══ SETTINGS ═══ */
+    function loadSettings() {
+      try {
+        const s = JSON.parse(localStorage.getItem(SK.SETTINGS)) || {};
+        if (s.volGeneral !== undefined) { document.getElementById('vol-general').value = s.volGeneral; document.getElementById('vol-general-val').textContent = s.volGeneral; }
+        if (s.sfx       !== undefined) document.getElementById('toggle-sfx').checked               = s.sfx;
+        if (s.crowd     !== undefined) document.getElementById('toggle-crowd').checked             = s.crowd;
+        if (s.music     !== undefined) document.getElementById('toggle-music').checked             = s.music;
+        if (s.shadows   !== undefined) document.getElementById('toggle-shadows').checked           = s.shadows;
+        if (s.particles !== undefined) document.getElementById('toggle-particles-setting').checked = s.particles;
+        if (s.lang) { document.getElementById('lang-es').classList.toggle('active',s.lang==='es'); document.getElementById('lang-en').classList.toggle('active',s.lang==='en'); }
+      } catch {}
+    }
+    function saveSetting(key, val) {
+      try { const s=JSON.parse(localStorage.getItem(SK.SETTINGS))||{}; s[key]=val; localStorage.setItem(SK.SETTINGS,JSON.stringify(s)); } catch {}
+    }
+    function setQuality(q, el) {
+      document.querySelectorAll('.quality-btn').forEach(b=>b.classList.remove('active'));
+      el.classList.add('active');
+      saveSetting('quality',q);
+      showToast(`Calidad: ${q==='low'?'Baja':q==='medium'?'Media':'Alta'}`, 'info');
+    }
+    function setLang(lang, el) {
+      document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+      el.classList.add('active');
+      saveSetting('lang',lang);
+      showToast(lang==='es'?'¡Idioma: Español!':'Language: English!','success');
+    }
+    function resetData() {
+      if (confirm('¿Seguro que deseas borrar todos los datos? Esta acción no se puede deshacer.')) {
+        Object.values(SK).forEach(k=>localStorage.removeItem(k));
+        showToast('Datos borrados','warning');
+        updateMainGreeting(null);
+        setTimeout(()=>showScreen('screen-main'),800);
+      }
+    }
+
+    /* ═══ INIT ═══ */
+    window.addEventListener('load', () => {
+      spawnParticles();
+      updateMainGreeting(loadPlayer());
+      generateRankings();
+      loadSettings();
+      buildTournament();
+    });
+  </script>
+</body>
+</html>

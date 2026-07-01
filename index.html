@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Padel Champions Online</title>
+  <meta name="description" content="El simulador de pádel 2v2 más realista. Juega partidas 2D con física profesional, IA avanzada y puntuación FIP oficial." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="preload" href="padel_court_hero.webp" as="image" type="image/webp" />
+  <style>
+    canvas#bg-canvas { display: block; }
+    .court-preview {
+      width: 320px;
+      height: 480px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .court-preview canvas {
+      border-radius: 16px;
+      border: 1px solid rgba(0,212,255,0.3);
+      box-shadow: 0 0 60px rgba(0,212,255,0.2), 0 0 120px rgba(0,212,255,0.1);
+    }
+    @media (max-width: 900px) { .court-preview { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="bg-animated"></div>
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- LOADING -->
+  <div class="loading-screen" id="loading-screen">
+    <div class="loading-logo">🏓 PADEL</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.4);letter-spacing:3px;text-transform:uppercase;">CHAMPIONS ONLINE</div>
+    <div class="loading-bar-container">
+      <div class="loading-bar" id="loading-bar"></div>
+    </div>
+    <div class="loading-text" id="loading-text">Cargando cancha...</div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content" id="main-content" style="display:none;">
+    <header class="site-header">
+      <div class="brand-logo">
+        <div class="brand-icon">🏓</div>
+        <div>
+          <div class="brand-name">PADEL CHAMPIONS</div>
+          <div class="brand-tagline">Online · Temporada 2026</div>
+        </div>
+      </div>
+      <nav class="header-nav">
+        <button class="nav-btn" id="btn-ranking" onclick="showScreen('ranking')">🏆 Ranking</button>
+        <button class="nav-btn" id="btn-profile-nav" onclick="showScreen('profile')">👤 Perfil</button>
+      </nav>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-content">
+        <div class="hero-badge">⚡ Season 2026 · Online</div>
+        <h1 class="hero-title">
+          <span class="line1">PADEL</span>
+          <span class="line2">CHAMPIONS</span>
+        </h1>
+        <p class="hero-subtitle">
+          El simulador de pádel 2v2 más realista. Física profesional, 
+          IA avanzada, puntuación FIP oficial y experiencia eSports completa.
+        </p>
+        <div class="hero-actions">
+          <button class="btn-primary" id="btn-play-now" onclick="startGame('quick')">
+            ▶ JUGAR AHORA
+          </button>
+          <button class="btn-secondary" onclick="showScreen('create-player')">
+            ✏ Crear Jugador
+          </button>
+          <button class="btn-secondary" onclick="window._launch3D=true;startGame('quick')" style="background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(0,212,255,0.1));border-color:rgba(124,58,237,0.5);">
+            🎮 MODO 3D
+          </button>
+        </div>
+      </div>
+      <div class="court-preview">
+        <canvas id="preview-canvas" width="320" height="480"></canvas>
+      </div>
+    </section>
+
+    <!-- STATS BAR -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value" id="stat-wins">0</div>
+        <div class="stat-label">Victorias</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-losses">0</div>
+        <div class="stat-label">Derrotas</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-rating">1000</div>
+        <div class="stat-label">ELO Rating</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-winrate">-</div>
+        <div class="stat-label">Win Rate</div>
+      </div>
+    </div>
+
+    <!-- GAME MODES -->
+    <section class="modes-section">
+      <div class="section-title">Modos de Juego</div>
+      <div class="modes-grid">
+        <div class="mode-card" onclick="startGame('quick')" id="mode-quick">
+          <div class="mode-icon">⚡</div>
+          <div class="mode-name">Partido Rápido</div>
+          <div class="mode-desc">2v2 contra IA. Tú + compañero IA vs 2 rivales.</div>
+        </div>
+        <div class="mode-card" onclick="startGame('training')" id="mode-training">
+          <div class="mode-icon">🎯</div>
+          <div class="mode-name">Entrenamiento</div>
+          <div class="mode-desc">Practica golpes y rebotes sin presión. Pelota automática.</div>
+        </div>
+        <div class="mode-card" onclick="startGame('tournament')" id="mode-tournament">
+          <div class="mode-icon">🏆</div>
+          <div class="mode-name">Torneo</div>
+          <div class="mode-desc">Copa eliminatoria con 8 equipos. ¡Llega a la final!</div>
+        </div>
+        <div class="mode-card" onclick="showScreen('ranking')" id="mode-ranking">
+          <div class="mode-icon">📊</div>
+          <div class="mode-name">Rankings</div>
+          <div class="mode-desc">Tabla de posiciones mundial. ¿Dónde estás?</div>
+        </div>
+        <div class="mode-card" onclick="window._launch3D=true;startGame('quick')" id="mode-3d" style="background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(0,212,255,0.08));border-color:rgba(124,58,237,0.35);">
+          <div class="mode-icon">🎮</div>
+          <div class="mode-name" style="color:#a78bfa">Modo 3D <span style="font-size:10px;background:rgba(124,58,237,0.3);padding:2px 6px;border-radius:4px;vertical-align:middle;margin-left:4px;">NUEVO</span></div>
+          <div class="mode-desc">Juega en 3D con Three.js. Vidrio real, física avanzada.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ SCREEN: CREATE PLAYER ============ -->
+  <div class="screen-overlay" id="screen-create-player" role="dialog" aria-hidden="true" aria-modal="true" aria-label="Crear jugador" tabindex="-1">
+    <div class="overlay-card glass-card">
+      <button class="close-btn" onclick="closeScreen('create-player')">✕</button>
+      <h2 class="overlay-title">Crear Jugador</h2>
+      <p class="overlay-subtitle">Personaliza tu identidad en la cancha</p>
+
+      <div class="form-group">
+        <label class="form-label">Nombre del jugador</label>
+        <input type="text" class="form-input" id="player-name" placeholder="Tu nombre..." maxlength="20" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Edad</label>
+          <input type="number" class="form-input" id="player-age" placeholder="25" min="16" max="50" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nacionalidad</label>
+          <select class="form-select" id="player-nationality">
+            <option value="AR">🇦🇷 Argentina</option>
+            <option value="ES">🇪🇸 España</option>
+            <option value="BR">🇧🇷 Brasil</option>
+            <option value="MX">🇲🇽 México</option>
+            <option value="IT">🇮🇹 Italia</option>
+            <option value="FR">🇫🇷 Francia</option>
+            <option value="PT">🇵🇹 Portugal</option>
+            <option value="BE">🇧🇪 Bélgica</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mano dominante</label>
+        <div class="radio-group">
+          <div class="radio-btn">
+            <input type="radio" name="hand" id="hand-right" value="right" checked />
+            <label for="hand-right"><span class="icon">🤜</span>Derecha</label>
+          </div>
+          <div class="radio-btn">
+            <input type="radio" name="hand" id="hand-left" value="left" />
+            <label for="hand-left"><span class="icon">🤛</span>Zurda</label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estilo de juego</label>
+        <div class="radio-group">
+          <div class="radio-btn">
+            <input type="radio" name="style" id="style-power" value="power" checked />
+            <label for="style-power"><span class="icon">💥</span>Potencia</label>
+          </div>
+          <div class="radio-btn">
+            <input type="radio" name="style" id="style-control" value="control" />
+            <label for="style-control"><span class="icon">🎯</span>Control</label>
+          </div>
+          <div class="radio-btn">
+            <input type="radio" name="style" id="style-balanced" value="balanced" />
+            <label for="style-balanced"><span class="icon">⚖️</span>Balanceado</label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Color de paleta</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div id="color-00d4ff" onclick="selectPaddle('#00d4ff')" style="width:40px;height:40px;background:#00d4ff;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all 0.2s;" title="Cyan"></div>
+          <div id="color-ff6b35" onclick="selectPaddle('#ff6b35')" style="width:40px;height:40px;background:#ff6b35;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all 0.2s;" title="Naranja"></div>
+          <div id="color-7c3aed" onclick="selectPaddle('#7c3aed')" style="width:40px;height:40px;background:#7c3aed;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all 0.2s;" title="Violeta"></div>
+          <div id="color-00ff87" onclick="selectPaddle('#00ff87')" style="width:40px;height:40px;background:#00ff87;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all 0.2s;" title="Verde"></div>
+          <div id="color-ffd700" onclick="selectPaddle('#ffd700')" style="width:40px;height:40px;background:#ffd700;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all 0.2s;" title="Dorado"></div>
+          <div id="color-ff3366" onclick="selectPaddle('#ff3366')" style="width:40px;height:40px;background:#ff3366;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all 0.2s;" title="Rojo"></div>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px;" onclick="savePlayer()">
+        ✅ Guardar Jugador
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: RANKING ============ -->
+  <div class="screen-overlay" id="screen-ranking" role="dialog" aria-hidden="true" aria-modal="true" aria-label="Ranking mundial" tabindex="-1">
+    <div class="overlay-card glass-card" style="max-width:700px;width:100%;">
+      <button class="close-btn" onclick="closeScreen('ranking')">✕</button>
+      <h2 class="overlay-title">🏆 Ranking Mundial</h2>
+      <p class="overlay-subtitle">Top jugadores de la temporada 2026</p>
+      <table class="leaderboard-table" id="ranking-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Jugador</th>
+            <th>País</th>
+            <th>ELO</th>
+            <th>W/L</th>
+            <th>Win%</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: PROFILE ============ -->
+  <div class="screen-overlay" id="screen-profile" role="dialog" aria-hidden="true" aria-modal="true" aria-label="Perfil de usuario" tabindex="-1">
+    <div class="overlay-card glass-card" style="max-width:520px;">
+      <button class="close-btn" onclick="closeScreen('profile')">✕</button>
+      <h2 class="overlay-title">👤 Mi Perfil</h2>
+      <div id="profile-content"></div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: DIFFICULTY ============ -->
+  <div class="screen-overlay" id="screen-difficulty" role="dialog" aria-hidden="true" aria-modal="true" aria-label="Elegir dificultad" tabindex="-1">
+    <div class="overlay-card glass-card" style="max-width:480px;">
+      <button class="close-btn" onclick="closeScreen('difficulty')">✕</button>
+      <h2 class="overlay-title">⚙ Configurar Partida</h2>
+      <p class="overlay-subtitle">Elige la dificultad de los rivales</p>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+        <button class="mode-card" onclick="launchGame('easy')" id="diff-easy" style="text-align:left;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:28px;">🟢</span>
+            <div>
+              <div class="mode-name">Principiante</div>
+              <div class="mode-desc">IA lenta, posicionamiento básico. Ideal para aprender.</div>
+            </div>
+          </div>
+        </button>
+        <button class="mode-card" onclick="launchGame('medium')" id="diff-medium" style="text-align:left;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:28px;">🟡</span>
+            <div>
+              <div class="mode-name">Intermedio</div>
+              <div class="mode-desc">IA tática, cubre bien la cancha y varía los golpes.</div>
+            </div>
+          </div>
+        </button>
+        <button class="mode-card" onclick="launchGame('hard')" id="diff-hard" style="text-align:left;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:28px;">🔴</span>
+            <div>
+              <div class="mode-name">Profesional</div>
+              <div class="mode-desc">IA de élite. Efectos, bandejas y remates precisos.</div>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js" defer></script>
+  <script src="js/main.js" defer></script>
+  <script>
+    (function(){
+      const origShow = window.showScreen;
+      const origClose = window.closeScreen;
+      function focusFirst(el){
+        const selector='button,a,input,select,textarea,[tabindex]:not([tabindex="-1"])';
+        const f = el.querySelector(selector);
+        if(f) f.focus(); else el.focus();
+      }
+      window.showScreen = function(id){
+        try{ window._lastFocus = document.activeElement; }catch(e){}
+        if(origShow) origShow(id);
+        const overlay = document.getElementById('screen-' + id);
+        if(overlay){
+          overlay.setAttribute('aria-hidden','false');
+          overlay.setAttribute('tabindex','-1');
+          setTimeout(()=> focusFirst(overlay), 80);
+        }
+      };
+      window.closeScreen = function(id){
+        if(origClose) origClose(id);
+        const overlay = document.getElementById('screen-' + id);
+        if(overlay) overlay.setAttribute('aria-hidden','true');
+        if(window._lastFocus && window._lastFocus.focus) window._lastFocus.focus();
+      };
+      // Initialize aria-hidden based on display
+      document.addEventListener('DOMContentLoaded', function(){
+        document.querySelectorAll('.screen-overlay').forEach(o=>{
+          const hidden = getComputedStyle(o).display === 'none';
+          o.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+          if(!o.hasAttribute('tabindex')) o.setAttribute('tabindex','-1');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

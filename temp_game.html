@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Padel Champions — En Juego</title>
+  <meta name="description" content="Partida de pádel en curso — Padel Champions Online" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/game.css" />
+</head>
+<body>
+<div id="game-wrapper">
+
+  <!-- ===== CANVAS ===== -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- ===== HUD TOP — SCOREBOARD ===== -->
+  <div id="hud-top">
+    <!-- Team 0 (jugador + compañero) -->
+    <div class="score-panel" style="--color:#00d4ff;">
+      <div class="team-info">
+        <div class="team-name">TU EQUIPO</div>
+        <div class="team-players" id="team0-players">Jugador · Maya</div>
+      </div>
+      <div class="score-sets">
+        <div class="set-dot" id="set-dots-0-a"></div>
+        <div class="set-dot" id="set-dots-0-b"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;margin-left:8px;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:1px;">SET</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:rgba(255,255,255,0.7)" id="score-sets-0">0</div>
+      </div>
+      <div class="score-points" style="color:#00d4ff;" id="score-game-0">0</div>
+    </div>
+
+    <!-- Centro -->
+    <div class="score-center">
+      <div class="match-clock" id="match-clock">00:00</div>
+      <div class="set-indicator" id="set-indicator">SET 1</div>
+    </div>
+
+    <!-- Team 1 (rivales IA) -->
+    <div class="score-panel" style="--color:#ff6b35;flex-direction:row-reverse;">
+      <div class="team-info" style="text-align:right;">
+        <div class="team-name">RIVALES</div>
+        <div class="team-players" id="team1-players">Ramos · Chen</div>
+      </div>
+      <div class="score-sets">
+        <div class="set-dot" id="set-dots-1-a"></div>
+        <div class="set-dot" id="set-dots-1-b"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;margin-right:8px;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:1px;">SET</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:rgba(255,255,255,0.7)" id="score-sets-1">0</div>
+      </div>
+      <div class="score-points" style="color:#ff6b35;" id="score-game-1">0</div>
+    </div>
+  </div>
+
+  <!-- ===== POINT ALERT ===== -->
+  <div id="point-alert"></div>
+
+  <!-- ===== AI MESSAGE ===== -->
+  <div id="ai-message"></div>
+
+  <!-- ===== SERVE INDICATOR ===== -->
+  <div id="serve-indicator"></div>
+
+  <!-- ===== POWER BAR ===== -->
+  <div id="power-bar-container">
+    <div id="power-label">POTENCIA</div>
+    <div id="power-bar-bg">
+      <div id="power-bar-fill"></div>
+    </div>
+  </div>
+
+  <!-- ===== SPEED METER ===== -->
+  <div id="speed-meter">
+    <div id="speed-value">0</div>
+    <div id="speed-unit">KM/H</div>
+  </div>
+
+  <!-- ===== HUD BOTTOM — CONTROLS ===== -->
+  <div id="hud-bottom">
+    <div class="controls-hint">
+      <div class="ctrl-badge">
+        <span class="ctrl-key">↑↓←→</span> Mover
+      </div>
+      <div class="ctrl-badge">
+        <span class="ctrl-key">A</span> Derecha
+      </div>
+      <div class="ctrl-badge">
+        <span class="ctrl-key">S</span> Revés
+      </div>
+      <div class="ctrl-badge">
+        <span class="ctrl-key">W</span> Volea
+      </div>
+      <div class="ctrl-badge">
+        <span class="ctrl-key">Q</span> Globo
+      </div>
+      <div class="ctrl-badge">
+        <span class="ctrl-key">E</span> Bandeja
+      </div>
+      <div class="ctrl-badge">
+        <span class="ctrl-key">SPACE</span> Remate
+      </div>
+      <div class="ctrl-badge" style="background:linear-gradient(135deg,rgba(0,212,255,0.25),rgba(124,58,237,0.25));border-color:#00d4ff;box-shadow:0 0 10px rgba(0,212,255,0.2)">
+        <span class="ctrl-key">🎮 MANDO PS5/XBOX</span> Soporte Activo
+      </div>
+      <div class="ctrl-badge">
+        <span class="ctrl-key">ESC</span> Pausa
+      </div>
+    </div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:1px;">
+      🏓 PADEL CHAMPIONS ONLINE
+    </div>
+  </div>
+
+  <!-- ===== TRAINING OVERLAY ===== -->
+  <div id="training-overlay" role="dialog" aria-hidden="true" aria-label="Entrenamiento" tabindex="-1"></div>
+
+  <!-- ===== PAUSE MENU ===== -->
+  <div id="pause-menu" role="dialog" aria-hidden="true" aria-modal="true" aria-label="Menú de pausa" tabindex="-1">
+    <div class="pause-title">⏸ PAUSA</div>
+    <button class="pause-btn pause-btn-primary" id="btn-resume">▶ Continuar</button>
+    <button class="pause-btn pause-btn-secondary" id="btn-toggle-audio">🔊 Sonido ON</button>
+    <button class="pause-btn pause-btn-secondary" id="btn-restart">🔄 Reiniciar</button>
+    <button class="pause-btn pause-btn-danger" id="btn-exit">🏠 Salir al Menú</button>
+  </div>
+
+  <!-- ===== MATCH RESULT ===== -->
+  <div id="match-result" role="dialog" aria-hidden="true" aria-label="Resultado del partido" tabindex="-1"></div>
+
+</div>
+
+<!-- Scripts en orden de dependencias -->
+<script src="js/data.js" defer></script>
+<script src="js/scoring.js" defer></script>
+<script src="js/physics.js" defer></script>
+<script src="js/ai.js" defer></script>
+<script src="js/controls.js" defer></script>
+<script src="js/audio.js" defer></script>
+<script src="js/renderer.js" defer></script>
+<script src="js/ui.js" defer></script>
+<script src="js/game.js" defer></script>
+
+<script>
+// ---- Set dots helper (accedido desde ui.js) ----
+(function patchSetDots() {
+  const origUpdate = GameUI.prototype._updateSetDots;
+  GameUI.prototype._updateSetDots = function(team, setsWon) {
+    const suffixes = ['a', 'b'];
+    suffixes.forEach((s, i) => {
+      const dot = document.getElementById(`set-dots-${team}-${s}`);
+      if (!dot) return;
+      dot.classList.remove('won', 'lost');
+      if (i < setsWon) dot.classList.add('won');
+      else dot.classList.add('lost');
+    });
+  };
+})();
+</script>
+  <script>
+    (function(){
+      function setOverlayState(id, visible){
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.setAttribute('aria-hidden', visible ? 'false' : 'true');
+        if(visible){
+          setTimeout(()=>{ const f = el.querySelector('button,a,input,select,textarea,[tabindex]:not([tabindex="-1"])'); if(f) f.focus(); else el.focus(); }, 60);
+        }
+      }
+      window.openOverlay = function(id){ setOverlayState(id, true); };
+      window.closeOverlay = function(id){ setOverlayState(id, false); };
+      // initialize
+      document.addEventListener('DOMContentLoaded', ()=>{
+        ['training-overlay','pause-menu','match-result'].forEach(id=>{
+          const el = document.getElementById(id);
+          if(el){ el.setAttribute('aria-hidden', getComputedStyle(el).display === 'none' ? 'true' : 'false'); if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','-1'); }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

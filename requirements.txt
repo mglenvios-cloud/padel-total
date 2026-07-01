@@ -1,0 +1,3 @@
+# No pip requirements for the Blender script.
+# If you add Python packages for tools, list them here, e.g.:
+# numpy==1.26.0

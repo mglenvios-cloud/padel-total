@@ -1,0 +1,115 @@
+name: Blender Render & Export
+
+on:
+  workflow_dispatch:
+    inputs:
+      render_mode:
+        description: 'Render mode (preview|high)'
+        required: false
+        default: 'high'
+      hdri_path:
+        description: 'Optional path to HDRI (leave empty to skip)'
+        required: false
+        default: ''
+      render_output:
+        description: 'Render output path'
+        required: false
+        default: 'renders/render.png'
+      export_glb:
+        description: 'Export GLB (1/0)'
+        required: false
+        default: '1'
+      export_path:
+        description: 'GLB output path'
+        required: false
+        default: 'exports/stadium_raw.glb'
+      bake:
+        description: 'Run bake (1/0)'
+        required: false
+        default: '1'
+      bake_dir:
+        description: 'Bake output dir'
+        required: false
+        default: 'bakes'
+      bake_size:
+        description: 'Bake size (px)'
+        required: false
+        default: '2048'
+      thumbnail:
+        description: 'Generate thumbnail (1/0)'
+        required: false
+        default: '1'
+      thumb_path:
+        description: 'Thumbnail output path'
+        required: false
+        default: 'renders/thumb.png'
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+
+      - name: Run create_court.py (Blender headless)
+        env:
+          PADEL_RENDER_MODE: ${{ github.event.inputs.render_mode }}
+          PADEL_HDRI_PATH: ${{ github.event.inputs.hdri_path }}
+          PADEL_RENDER_OUTPUT: ${{ github.event.inputs.render_output }}
+          PADEL_EXPORT_GLTF: ${{ github.event.inputs.export_glb }}
+          PADEL_EXPORT_PATH: ${{ github.event.inputs.export_path }}
+          PADEL_BAKE: ${{ github.event.inputs.bake }}
+          PADEL_BAKE_DIR: ${{ github.event.inputs.bake_dir }}
+          PADEL_BAKE_SIZE: ${{ github.event.inputs.bake_size }}
+          PADEL_THUMBNAIL: ${{ github.event.inputs.thumbnail }}
+          PADEL_THUMB_PATH: ${{ github.event.inputs.thumb_path }}
+        run: |
+          mkdir -p renders exports bakes || true
+          blender --background --python create_court.py
+
+      - name: Setup Node.js and glTF-Transform
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install glTF-Transform CLI
+        run: |
+          npm install -g @gltf-transform/cli @gltf-transform/functions || true
+
+      - name: Optimize exported GLB (if present)
+        if: ${{ github.event.inputs.export_glb == '1' }}
+        run: |
+          set -e
+          INPUT_PATH="${{ github.event.inputs.export_path }}"
+          if [ ! -f "$INPUT_PATH" ]; then
+            if [ -f "exports/stadium_raw.glb" ]; then
+              INPUT_PATH="exports/stadium_raw.glb"
+            else
+              echo "No GLB found at $INPUT_PATH or exports/stadium_raw.glb — skipping optimization"
+              exit 0
+            fi
+          fi
+          OUT_DIR=$(dirname "$INPUT_PATH")
+          OUT_FILE="$OUT_DIR/stadium_opt.glb"
+          echo "Optimizing $INPUT_PATH -> $OUT_FILE"
+          # Basic rewrite + pruning
+          gltf-transform copy "$INPUT_PATH" "$OUT_FILE" || { echo "gltf-transform copy failed — ensure @gltf-transform/cli is installed"; exit 0; }
+          gltf-transform prune "$OUT_FILE" "$OUT_FILE" || echo "prune failed or not available, continuing"
+          # Attempt draco compression if plugin available
+          gltf-transform draco "$OUT_FILE" "$OUT_FILE" --compression-level=7 || echo "draco plugin not available or failed — skipping draco"
+
+
+      - name: Upload artifacts (renders, exports, bakes)
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-artifacts
+          path: |
+            renders/**
+            exports/**
+            bakes/**

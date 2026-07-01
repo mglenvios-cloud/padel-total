@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Padel Champions 3D — En Juego</title>
+  <meta name="description" content="Padel Champions Online — Partida 3D en curso" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/game.css" />
+  <style>
+    /* Ajustes específicos para el juego 3D */
+    #game-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0; left: 0;
+      z-index: 0;
+    }
+    #game-wrapper {
+      position: fixed;
+      inset: 0;
+      background: #080e1c;
+      overflow: hidden;
+    }
+    /* Badge 3D en HUD */
+    #badge-3d {
+      position: absolute;
+      top: 76px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #00d4ff22, #7c3aed22);
+      border: 1px solid rgba(124, 58, 237, 0.4);
+      color: rgba(255,255,255,0.6);
+      font-size: 10px;
+      letter-spacing: 2px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 600;
+      z-index: 20;
+    }
+    /* Loading screen */
+    #loading-3d {
+      position: fixed;
+      inset: 0;
+      background: #080e1c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      transition: opacity 0.8s ease;
+    }
+    #loading-3d.hidden { opacity: 0; pointer-events: none; }
+    .loading-spinner {
+      width: 60px; height: 60px;
+      border: 3px solid rgba(0, 212, 255, 0.2);
+      border-top-color: #00d4ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: rgba(255,255,255,0.5); margin-top: 20px; font-family: 'Outfit', sans-serif; font-size: 13px; letter-spacing: 2px; }
+    .loading-title { color: #00d4ff; font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; margin-bottom: 24px; letter-spacing: 3px; }
+  </style>
+</head>
+<body>
+<div id="game-wrapper">
+
+  <!-- LOADING SCREEN 3D -->
+  <div id="loading-3d">
+    <div class="loading-title">⚡ PADEL 3D</div>
+    <div class="loading-spinner"></div>
+    <div class="loading-text">CARGANDO MOTOR 3D...</div>
+  </div>
+
+  <!-- CANVAS THREE.JS -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- BADGE 3D -->
+  <div id="badge-3d">🎮 MODO 3D · THREE.JS</div>
+
+  <!-- HUD TOP — SCOREBOARD -->
+  <div id="hud-top">
+    <div class="score-panel" style="--color:#00d4ff;">
+      <div class="team-info">
+        <div class="team-name">TU EQUIPO</div>
+        <div class="team-players" id="team0-players">Jugador · Maya</div>
+      </div>
+      <div class="score-sets">
+        <div class="set-dot" id="set-dots-0-a"></div>
+        <div class="set-dot" id="set-dots-0-b"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;margin-left:8px;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:1px;">SET</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:rgba(255,255,255,0.7)" id="score-sets-0">0</div>
+      </div>
+      <div class="score-points" style="color:#00d4ff;" id="score-game-0">0</div>
+    </div>
+
+    <div class="score-center">
+      <div class="match-clock" id="match-clock">00:00</div>
+      <div class="set-indicator" id="set-indicator">SET 1</div>
+    </div>
+
+    <div class="score-panel" style="--color:#ff6b35;flex-direction:row-reverse;">
+      <div class="team-info" style="text-align:right;">
+        <div class="team-name">RIVALES</div>
+        <div class="team-players" id="team1-players">Ramos · Chen</div>
+      </div>
+      <div class="score-sets">
+        <div class="set-dot" id="set-dots-1-a"></div>
+        <div class="set-dot" id="set-dots-1-b"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;margin-right:8px;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:1px;">SET</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:rgba(255,255,255,0.7)" id="score-sets-1">0</div>
+      </div>
+      <div class="score-points" style="color:#ff6b35;" id="score-game-1">0</div>
+    </div>
+  </div>
+
+  <!-- OVERLAYS HUD -->
+  <div id="point-alert"></div>
+  <div id="ai-message"></div>
+  <div id="serve-indicator"></div>
+
+  <div id="power-bar-container">
+    <div id="power-label">POTENCIA</div>
+    <div id="power-bar-bg"><div id="power-bar-fill"></div></div>
+  </div>
+
+  <div id="speed-meter">
+    <div id="speed-value">0</div>
+    <div id="speed-unit">KM/H</div>
+  </div>
+
+  <!-- CONTROLS HINT -->
+  <div id="hud-bottom">
+    <div class="controls-hint">
+      <div class="ctrl-badge"><span class="ctrl-key">↑↓←→</span> Mover</div>
+      <div class="ctrl-badge"><span class="ctrl-key">A</span> Derecha</div>
+      <div class="ctrl-badge"><span class="ctrl-key">S</span> Revés</div>
+      <div class="ctrl-badge"><span class="ctrl-key">W</span> Volea</div>
+      <div class="ctrl-badge"><span class="ctrl-key">Q</span> Globo</div>
+      <div class="ctrl-badge"><span class="ctrl-key">E</span> Bandeja</div>
+      <div class="ctrl-badge"><span class="ctrl-key">SPACE</span> Remate</div>
+      <div class="ctrl-badge" style="background:linear-gradient(135deg,rgba(0,212,255,0.25),rgba(124,58,237,0.25));border-color:#00d4ff;box-shadow:0 0 10px rgba(0,212,255,0.2)"><span class="ctrl-key">🎮 MANDO PS5/XBOX</span> Soporte Activo</div>
+      <div class="ctrl-badge"><span class="ctrl-key">ESC</span> Pausa</div>
+    </div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:1px;">
+      🏓 PADEL CHAMPIONS ONLINE <span style="color:#00d4ff">3D</span>
+    </div>
+  </div>
+
+  <div id="training-overlay"></div>
+
+  <!-- PAUSE MENU -->
+  <div id="pause-menu">
+    <div class="pause-title">⏸ PAUSA</div>
+    <button class="pause-btn pause-btn-primary" id="btn-resume">▶ Continuar</button>
+    <button class="pause-btn pause-btn-secondary" id="btn-toggle-audio">🔊 Sonido ON</button>
+    <button class="pause-btn pause-btn-secondary" id="btn-restart">🔄 Reiniciar</button>
+    <button class="pause-btn pause-btn-danger" id="btn-exit">🏠 Salir al Menú</button>
+  </div>
+
+  <div id="match-result"></div>
+</div>
+
+<!-- THREE.JS (Local Copy) -->
+<script src="js/three.min.js"></script>
+
+<!-- CANNON.JS (Local Copy) -->
+<script src="js/cannon.min.js"></script>
+
+<!-- Scripts en orden de dependencias -->
+<script src="js/data.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/renderer3d.js"></script>
+<script src="js/physics3d.js"></script>
+<script src="js/ai3d.js"></script>
+<script src="js/game3d.js"></script>
+
+<script>
+// Set dot helper (accedido desde ui.js)
+GameUI.prototype._updateSetDots = function(team, setsWon) {
+  ['a','b'].forEach((s, i) => {
+    const dot = document.getElementById(`set-dots-${team}-${s}`);
+    if (!dot) return;
+    dot.classList.remove('won','lost');
+    if (i < setsWon) dot.classList.add('won');
+    else dot.classList.add('lost');
+  });
+};
+
+// Ocultar loading
+setTimeout(() => {
+  const loader = document.getElementById('loading-3d');
+  const title = document.querySelector('#loading-3d .loading-title');
+  if (title && title.textContent.includes('ERROR')) return;
+  if (loader) loader.classList.add('hidden');
+  setTimeout(() => { if(loader) loader.remove(); }, 900);
+}, 800);
+</script>
+</body>
+</html>
+

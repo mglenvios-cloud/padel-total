@@ -1,0 +1,39 @@
+[13916:8300:0615/163214.461:INFO:components\enterprise\browser\controller\chrome_browser_cloud_management_controller.cc:239] No machine level policy manager exists.
+[6688:2108:0615/163214.539:ERROR:ui\gl\egl_util.cc:92] EGL Driver message (Error) eglCreateContext: Requested version is not supported
+[6688:2108:0615/163214.539:ERROR:ui\gl\gl_context_egl.cc:374] eglCreateContext ES 3.0 failed with error EGL_BAD_ATTRIBUTE
+[6688:2108:0615/163214.542:ERROR:ui\gl\egl_util.cc:92] EGL Driver message (Error) eglCreateContext: Requested version is not supported
+[6688:2108:0615/163214.542:ERROR:ui\gl\gl_context_egl.cc:374] eglCreateContext ES 3.0 failed with error EGL_BAD_ATTRIBUTE
+[6688:2108:0615/163214.555:ERROR:ui\gl\egl_util.cc:92] EGL Driver message (Error) eglCreateContext: Requested version is not supported
+[6688:2108:0615/163214.555:ERROR:ui\gl\gl_context_egl.cc:374] eglCreateContext ES 3.0 failed with error EGL_BAD_ATTRIBUTE
+[13916:14312:0615/163214.581:WARNING:chrome\browser\extensions\external_pref_loader.cc:294] You are using an old-style extension deployment method (external_extensions.json), which will soon be deprecated. (see http://developer.chrome.com/docs/extensions/how-to/distribute/install-extensions)
+[13916:2408:0615/163214.649:WARNING:chrome\browser\media\router\discovery\discovery_network_list_win.cc:229] Failed to open WLAN handle: No se ha iniciado el servicio. (0x426)
+[13916:8300:0615/163214.655:WARNING:chrome\browser\extensions\external_registry_loader_win.cc:236] Error observing HKLM: Acceso denegado. (0x5)
+[13916:8300:0615/163215.079:ERROR:content\browser\gpu\gpu_process_host.cc:1005] GPU process exited unexpectedly: exit_code=-1073741819
+[13916:8300:0615/163215.079:WARNING:content\browser\gpu\gpu_process_host.cc:1447] The GPU process has crashed 1 time(s)
+[8340:1664:0615/163215.141:ERROR:ui\gl\egl_util.cc:92] EGL Driver message (Error) eglCreateContext: Requested version is not supported
+[8340:1664:0615/163215.141:ERROR:ui\gl\gl_context_egl.cc:374] eglCreateContext ES 3.0 failed with error EGL_BAD_ATTRIBUTE
+[8340:1664:0615/163215.143:ERROR:ui\gl\egl_util.cc:92] EGL Driver message (Error) eglCreateContext: Requested version is not supported
+[8340:1664:0615/163215.143:ERROR:ui\gl\gl_context_egl.cc:374] eglCreateContext ES 3.0 failed with error EGL_BAD_ATTRIBUTE
+[13916:8300:0615/163215.151:WARNING:content\browser\gpu\gpu_process_host.cc:1027] Reinitialized the GPU process after a crash. The reported initialization time was 41 ms
+[8340:1664:0615/163215.151:ERROR:ui\gl\egl_util.cc:92] EGL Driver message (Error) eglCreateContext: Requested version is not supported
+[8340:1664:0615/163215.151:ERROR:ui\gl\gl_context_egl.cc:374] eglCreateContext ES 3.0 failed with error EGL_BAD_ATTRIBUTE
+[13916:8300:0615/163215.451:ERROR:content\browser\gpu\gpu_process_host.cc:1005] GPU process exited unexpectedly: exit_code=-1073741819
+[13916:8300:0615/163215.451:WARNING:content\browser\gpu\gpu_process_host.cc:1447] The GPU process has crashed 2 time(s)
+[6808:12608:0615/163215.519:ERROR:ui\gl\egl_util.cc:92] EGL Driver message (Error) eglCreateContext: Requested version is not supported
+[6808:12608:0615/163215.519:ERROR:ui\gl\gl_context_egl.cc:374] eglCreateContext ES 3.0 failed with error EGL_BAD_ATTRIBUTE
+[6808:12608:0615/163215.521:ERROR:ui\gl\egl_util.cc:92] EGL Driver message (Error) eglCreateContext: Requested version is not supported
+[6808:12608:0615/163215.521:ERROR:ui\gl\gl_context_egl.cc:374] eglCreateContext ES 3.0 failed with error EGL_BAD_ATTRIBUTE
+[13916:8300:0615/163215.532:WARNING:content\browser\gpu\gpu_process_host.cc:1027] Reinitialized the GPU process after a crash. The reported initialization time was 52 ms
+[6808:12608:0615/163215.532:ERROR:ui\gl\egl_util.cc:92] EGL Driver message (Error) eglCreateContext: Requested version is not supported
+[6808:12608:0615/163215.532:ERROR:ui\gl\gl_context_egl.cc:374] eglCreateContext ES 3.0 failed with error EGL_BAD_ATTRIBUTE
+[13916:8300:0615/163215.830:ERROR:content\browser\gpu\gpu_process_host.cc:1005] GPU process exited unexpectedly: exit_code=-1073741819
+[13916:8300:0615/163215.830:WARNING:content\browser\gpu\gpu_process_host.cc:1447] The GPU process has crashed 3 time(s)
+[13916:8300:0615/163215.865:WARNING:content\browser\gpu\gpu_process_host.cc:1027] Reinitialized the GPU process after a crash. The reported initialization time was 0 ms
+[12192:8356:0615/163215.865:ERROR:gpu\ipc\service\gpu_channel_manager.cc:927] ContextResult::kFatalFailure: Failed to create shared context for virtualization.
+[12192:8356:0615/163216.804:ERROR:gpu\ipc\service\gpu_channel_manager.cc:927] ContextResult::kFatalFailure: Failed to create shared context for virtualization.
+[12192:8356:0615/163216.804:ERROR:gpu\ipc\service\gpu_channel_manager.cc:927] ContextResult::kFatalFailure: Failed to create shared context for virtualization.
+[13916:4928:0615/163217.160:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[13916:4928:0615/163217.176:ERROR:google_apis\gcm\engine\mcs_client.cc:702]   Error code: 401  Error message: Authentication Failed: wrong_secret
+[13916:4928:0615/163217.176:ERROR:google_apis\gcm\engine\mcs_client.cc:704] Failed to log in to GCM, resetting connection.
+[13916:4928:0615/163217.180:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[13916:4928:0615/163217.183:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
