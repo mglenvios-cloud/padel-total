@@ -1,1 +1,15 @@
-.vercel
+.vercel/
+.venv/
+chrome_profile/
+chrome_profile_index/
+chrome_profile_webgl/
+bakes/
+exports/
+renders/
+temp_*
+*.pyc
+__pycache__/
+*.log
+.DS_Store
+/.vscode/
+.idea/
