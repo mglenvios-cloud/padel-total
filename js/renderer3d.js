@@ -19,19 +19,75 @@ class GameRenderer3D {
   }
 
   _initRenderer() {
-    this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
+    let initialized = false;
+    if (navigator.gpu && typeof THREE.WebGPURenderer !== 'undefined') {
+      try {
+        console.log("AI Graphics Studio: Initializing WebGPURenderer...");
+        this.renderer = new THREE.WebGPURenderer({ canvas: this.canvas, antialias: true });
+        initialized = true;
+      } catch (e) {
+        console.warn("WebGPURenderer failed, falling back to WebGLRenderer:", e);
+      }
+    }
+    
+    if (!initialized) {
+      console.log("AI Graphics Studio: Initializing WebGLRenderer...");
+      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: "high-performance" });
+    }
+
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.25;
+    
+    if (this.renderer.toneMapping !== undefined) {
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 1.35;
+    }
+    
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x03070f);
-    this.scene.fog = new THREE.FogExp2(0x03070f, 0.008);
+    this.scene.background = new THREE.Color(0x02050b);
+    this.scene.fog = new THREE.FogExp2(0x02050b, 0.007);
+    
+    // Generar y almacenar el mapa de entorno procedimental
+    this.envMap = this._makeEnvMap();
+  }
+
+  _makeEnvMap() {
+    const c = document.createElement('canvas');
+    c.width = 1024; c.height = 512;
+    const ctx = c.getContext('2d');
+    
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#010307');
+    grad.addColorStop(0.5, '#051126');
+    grad.addColorStop(1, '#010307');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1024, 512);
+    
+    // Luces de estadio y glows de color
+    const colors = ['#00d4ff', '#7c3aed', '#ff6b35', '#00ff87'];
+    for (let i = 0; i < 4; i++) {
+      const cx = 150 + i * 240;
+      const cy = 180;
+      
+      // Glow
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 180);
+      glow.addColorStop(0, colors[i] + '44');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(cx, cy, 180, 0, Math.PI * 2); ctx.fill();
+      
+      // Reflector
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(cx, cy, 25, 0, Math.PI * 2); ctx.fill();
+    }
+    
+    const tex = new THREE.CanvasTexture(c);
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    return tex;
   }
 
   _initCamera() {
-    // Cámara más baja y cercana — estilo TV deportiva
     this.camera = new THREE.PerspectiveCamera(48, this.canvas.width / this.canvas.height, 0.1, 300);
     this.camera.position.set(0, 11, 18);
     this.camera.lookAt(0, 0, 0);
@@ -41,25 +97,23 @@ class GameRenderer3D {
   }
 
   _initLighting() {
-    // Ambiente oscuro de estadio cerrado
-    this.scene.add(new THREE.AmbientLight(0x111622, 1.2));
+    this.scene.add(new THREE.AmbientLight(0x0e1320, 1.4));
 
-    // Luz hemisférica muy suave
-    const hemi = new THREE.HemisphereLight(0x334466, 0x111111, 0.6);
+    const hemi = new THREE.HemisphereLight(0x3a4b6e, 0x080808, 0.7);
     this.scene.add(hemi);
 
-    // Sol direccional para sombras principales (como un reflector cenital)
-    this.sun = new THREE.DirectionalLight(0xfff5e6, 1.8);
-    this.sun.position.set(2, 20, 2);
+    // Reflector principal para sombras súper definidas
+    this.sun = new THREE.DirectionalLight(0xfff8ee, 2.2);
+    this.sun.position.set(2, 22, 2);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(1024, 1024);
+    this.sun.shadow.mapSize.set(2048, 2048);
     this.sun.shadow.camera.near = 1;
     this.sun.shadow.camera.far = 40;
-    this.sun.shadow.camera.left = -15;
-    this.sun.shadow.camera.right = 15;
-    this.sun.shadow.camera.top = 15;
-    this.sun.shadow.camera.bottom = -15;
-    this.sun.shadow.bias = -0.001;
+    this.sun.shadow.camera.left = -16;
+    this.sun.shadow.camera.right = 16;
+    this.sun.shadow.camera.top = 16;
+    this.sun.shadow.camera.bottom = -16;
+    this.sun.shadow.bias = -0.0005;
     this.scene.add(this.sun);
   }
 
@@ -67,10 +121,16 @@ class GameRenderer3D {
     const courtGroup = new THREE.Group();
 
     // ── ALFOMBRA ROJA EXTERIOR (WPT) ───────────────────────
+    const carpetAlbedo = this._makeCarpetAlbedo();
+    const carpetTex = new THREE.CanvasTexture(carpetAlbedo);
+    carpetTex.wrapS = carpetTex.wrapT = THREE.RepeatWrapping;
+    carpetTex.repeat.set(6, 8);
     const carpetMat = new THREE.MeshStandardMaterial({
-      color: 0xcc1122, // Rojo brillante
-      roughness: 0.9,
-      metalness: 0.05
+      map: carpetTex,
+      roughness: 0.85,
+      metalness: 0.05,
+      normalMap: this._makeCarpetNormalMap(),
+      normalScale: new THREE.Vector2(0.5, 0.5)
     });
     const carpet = new THREE.Mesh(new THREE.BoxGeometry(22, 0.08, 32), carpetMat);
     carpet.position.y = -0.08;
@@ -83,8 +143,11 @@ class GameRenderer3D {
     floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
     const floorMat = new THREE.MeshStandardMaterial({
       map: floorTex,
-      roughness: 0.82,
-      metalness: 0,
+      normalMap: this._makeCourtNormalMap(),
+      normalScale: new THREE.Vector2(0.35, 0.35),
+      roughnessMap: this._makeCourtRoughnessMap(),
+      roughness: 0.85,
+      metalness: 0.0,
       color: 0x0f5ad2, // Azul WPT
     });
     const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.12, 20), floorMat);
@@ -93,9 +156,15 @@ class GameRenderer3D {
     courtGroup.add(floor);
 
     // ── LÍNEAS BLANCAS ─────────────────────────────────────
-    const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, emissive: 0xffffff, emissiveIntensity: 0.05 });
+    const lineMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.7,
+      metalness: 0.05,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.08
+    });
     const addLine = (w, d, x, z) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.018, d), lineMat);
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.019, d), lineMat);
       m.position.set(x, 0.01, z);
       m.receiveShadow = true;
       courtGroup.add(m);
@@ -115,16 +184,24 @@ class GameRenderer3D {
 
     // ── MATERIAL VIDRIO ──────────────────────────
     const glassMat = new THREE.MeshStandardMaterial({
-      color: 0xaaddff,
+      color: 0xcceeff,
       transparent: true,
-      opacity: 0.18,
-      roughness: 0.05,
-      metalness: 0.1,
+      opacity: 0.24,
+      roughness: 0.02,
+      metalness: 0.95,
+      envMap: this.envMap,
+      envMapIntensity: 2.5,
       side: THREE.DoubleSide,
       depthWrite: false,
     });
     // Azul oscuro estructural para el marco metálico
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x081d4a, metalness: 0.8, roughness: 0.3 });
+    const frameMat = new THREE.MeshStandardMaterial({
+      color: 0x081d4a,
+      metalness: 0.9,
+      roughness: 0.15,
+      envMap: this.envMap,
+      envMapIntensity: 1.5
+    });
 
     // Vidrio laterales (3m alto)
     [-5, 5].forEach(x => {
@@ -171,8 +248,13 @@ class GameRenderer3D {
     const netCanvas = this._makeNetCanvas();
     const netTex = new THREE.CanvasTexture(netCanvas);
     const netMat = new THREE.MeshStandardMaterial({
-      map: netTex, transparent: true, side: THREE.DoubleSide,
-      color: 0xffffff, alphaTest: 0.1
+      map: netTex,
+      transparent: true,
+      side: THREE.DoubleSide,
+      color: 0xffffff,
+      alphaTest: 0.1,
+      roughness: 0.4,
+      metalness: 0.1
     });
     const netMesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 0.88), netMat);
     netMesh.position.set(0, 0.44, 0);
@@ -181,7 +263,13 @@ class GameRenderer3D {
 
     // Banda superior
     const band = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.08, 0.05),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.1 }));
+      new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.15,
+        roughness: 0.6,
+        metalness: 0.0
+      }));
     band.position.set(0, 0.93, 0);
     courtGroup.add(band);
 
@@ -201,30 +289,108 @@ class GameRenderer3D {
   // ── TEXTURA DE CANCHA ─────────────────────────────────────
   _makeCourtTexture() {
     const c = document.createElement('canvas');
-    c.width = 512; c.height = 512;
+    c.width = 1024; c.height = 1024;
     const ctx = c.getContext('2d');
 
     // Base azul WPT
-    ctx.fillStyle = '#0a42a0';
-    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillStyle = '#093c90';
+    ctx.fillRect(0, 0, 1024, 1024);
 
-    // Patrón de césped sintético (líneas finas verticales)
-    for (let i = 0; i < 512; i += 2) {
-      const shade = 10 + Math.random() * 15;
-      ctx.fillStyle = `rgb(${shade}, ${60 + Math.random() * 30}, ${140 + Math.random() * 45})`;
-      ctx.fillRect(i, 0, 1, 512);
+    // Patrón de césped sintético HD (líneas finas verticales más densas)
+    for (let i = 0; i < 1024; i += 2) {
+      const shade = 10 + Math.random() * 20;
+      ctx.fillStyle = `rgb(${shade}, ${50 + Math.random() * 40}, ${120 + Math.random() * 65})`;
+      ctx.fillRect(i, 0, 1, 1024);
     }
 
-    // Textura granulada sutil
-    for (let i = 0; i < 3500; i++) {
-      const x = Math.random() * 512;
-      const y = Math.random() * 512;
+    // Textura granulada ultra sutil (arena de sílice)
+    for (let i = 0; i < 12000; i++) {
+      const x = Math.random() * 1024;
+      const y = Math.random() * 1024;
       const brightness = Math.random() > 0.5 ? 255 : 0;
-      ctx.fillStyle = `rgba(${brightness},${brightness},${brightness},0.035)`;
+      ctx.fillStyle = `rgba(${brightness},${brightness},${brightness},0.04)`;
       ctx.fillRect(x, y, 1, 1);
     }
 
     return c;
+  }
+
+  _makeCourtNormalMap() {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 512;
+    const ctx = c.getContext('2d');
+    const imgData = ctx.createImageData(512, 512);
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      const nx = Math.floor(128 + (Math.random() - 0.5) * 40);
+      const ny = Math.floor(128 + (Math.random() - 0.5) * 40);
+      imgData.data[i] = nx;
+      imgData.data[i + 1] = ny;
+      imgData.data[i + 2] = 255;
+      imgData.data[i + 3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(8, 16);
+    return tex;
+  }
+
+  _makeCourtRoughnessMap() {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 512;
+    const ctx = c.getContext('2d');
+    const imgData = ctx.createImageData(512, 512);
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      const val = Math.floor(180 + Math.random() * 75);
+      imgData.data[i] = val;
+      imgData.data[i + 1] = val;
+      imgData.data[i + 2] = val;
+      imgData.data[i + 3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(8, 16);
+    return tex;
+  }
+
+  _makeCarpetAlbedo() {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 512;
+    const ctx = c.getContext('2d');
+    
+    // Rojo oscuro de base
+    ctx.fillStyle = '#b01018';
+    ctx.fillRect(0, 0, 512, 512);
+    
+    // Dibujar patrón de malla/lona
+    ctx.strokeStyle = '#990d14';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 512; i += 4) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 512); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(512, i); ctx.stroke();
+    }
+    return c;
+  }
+
+  _makeCarpetNormalMap() {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 256;
+    const ctx = c.getContext('2d');
+    const imgData = ctx.createImageData(256, 256);
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      const nx = Math.floor(128 + (Math.random() - 0.5) * 15);
+      const ny = Math.floor(128 + (Math.random() - 0.5) * 15);
+      imgData.data[i] = nx;
+      imgData.data[i + 1] = ny;
+      imgData.data[i + 2] = 255;
+      imgData.data[i + 3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(24, 24);
+    return tex;
   }
 
   _makeFence(x, y, z, type) {
@@ -279,43 +445,30 @@ class GameRenderer3D {
   }
 
   _buildStadium() {
-    // ── TRIBUNAS ESCALONADAS DEL ESTADIO ───────────────────
-    const standMat = new THREE.MeshStandardMaterial({ color: 0x0e1828, roughness: 0.95 });
-    const seatMat = new THREE.MeshStandardMaterial({ color: 0xe0e2e5, roughness: 0.6 });
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x081d4a, metalness: 0.8, roughness: 0.3 });
-    const seatGeo = new THREE.BoxGeometry(0.35, 0.18, 0.45);
+    // Tribunas escalonadas con material deportivo optimizado
+    const standMat = new THREE.MeshStandardMaterial({ color: 0x090e17, roughness: 0.95 });
     
-    // Público: esferas con colores variados
+    const seatGeo = new THREE.BoxGeometry(0.35, 0.18, 0.45);
+    const seatMat = new THREE.MeshStandardMaterial({ 
+      color: 0xd0d5dd, 
+      roughness: 0.5,
+      metalness: 0.15,
+      envMap: this.envMap,
+      envMapIntensity: 0.5
+    });
+    
     const crowdColors = [0x005ebb, 0xff5511, 0x11bb55, 0x7c3aed, 0x222222, 0xd02030, 0xebad00];
-    const crowdGeo = new THREE.SphereGeometry(0.24, 6, 5);
+    const headGeo = new THREE.SphereGeometry(0.22, 6, 5);
     const bodyGeo = new THREE.CylinderGeometry(0.12, 0.14, 0.4, 6);
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.7 });
 
-    const addSeatAndSpectator = (x, y, z, rotY) => {
-      // Asiento blanco
-      const seat = new THREE.Mesh(seatGeo, seatMat);
-      seat.position.set(x, y + 0.09, z);
-      seat.rotation.y = rotY;
-      seat.castShadow = true;
-      this.scene.add(seat);
+    const seatPositions = [];
+    const spectatorPositions = [];
 
-      // 70% de probabilidad de tener un espectador
-      if (Math.random() < 0.70) {
-        const color = crowdColors[Math.floor(Math.random() * crowdColors.length)];
-        const shirtMat = new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
-        const skinMat = new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.7 });
-
-        const person = new THREE.Group();
-        const head = new THREE.Mesh(crowdGeo, skinMat);
-        head.position.y = 0.38;
-        person.add(head);
-
-        const body = new THREE.Mesh(bodyGeo, shirtMat);
-        body.position.y = 0.1;
-        person.add(body);
-
-        person.position.set(x, y + 0.18, z);
-        person.rotation.y = rotY;
-        this.scene.add(person);
+    const addSeatAndSpectatorData = (x, y, z, rotY) => {
+      seatPositions.push({ x, y: y + 0.09, z, rotY });
+      if (Math.random() < 0.72) {
+        spectatorPositions.push({ x, y: y + 0.18, z, rotY });
       }
     };
 
@@ -335,11 +488,12 @@ class GameRenderer3D {
         );
         s.position.set(stepX, (stepY - 0.6) / 2, 0);
         s.receiveShadow = true;
+        s.castShadow = true;
         this.scene.add(s);
 
-        // Añadir asientos en este escalón
+        // Almacenar posiciones en lugar de crear meshes individuales
         for (let sz = -14; sz <= 14; sz += 0.95) {
-          addSeatAndSpectator(stepX, stepY, sz, rotY);
+          addSeatAndSpectatorData(stepX, stepY, sz, rotY);
         }
       }
     });
@@ -360,14 +514,64 @@ class GameRenderer3D {
         );
         s.position.set(0, (stepY - 0.6) / 2, stepZ);
         s.receiveShadow = true;
+        s.castShadow = true;
         this.scene.add(s);
 
-        // Añadir asientos en este escalón
+        // Almacenar posiciones
         for (let sx = -8; sx <= 8; sx += 0.95) {
-          addSeatAndSpectator(sx, stepY, stepZ, rotY);
+          addSeatAndSpectatorData(sx, stepY, stepZ, rotY);
         }
       }
     });
+
+    // Instanciar Asientos
+    const seatMesh = new THREE.InstancedMesh(seatGeo, seatMat, seatPositions.length);
+    seatMesh.castShadow = true;
+    seatMesh.receiveShadow = true;
+    const dummy = new THREE.Object3D();
+    seatPositions.forEach((pos, idx) => {
+      dummy.position.set(pos.x, pos.y, pos.z);
+      dummy.rotation.set(0, pos.rotY, 0);
+      dummy.updateMatrix();
+      seatMesh.setMatrixAt(idx, dummy.matrix);
+    });
+    this.scene.add(seatMesh);
+
+    // Instanciar Cabezas de Espectadores
+    const headMesh = new THREE.InstancedMesh(headGeo, skinMat, spectatorPositions.length);
+    headMesh.castShadow = true;
+    this.scene.add(headMesh);
+
+    // Instanciar Torso/Camisetas de Espectadores
+    const bodyMat = new THREE.MeshStandardMaterial({ roughness: 0.8 });
+    const bodyMesh = new THREE.InstancedMesh(bodyGeo, bodyMat, spectatorPositions.length);
+    bodyMesh.castShadow = true;
+    
+    spectatorPositions.forEach((pos, idx) => {
+      // Cabeza
+      dummy.position.set(pos.x, pos.y + 0.38, pos.z);
+      dummy.rotation.set(0, pos.rotY, 0);
+      dummy.updateMatrix();
+      headMesh.setMatrixAt(idx, dummy.matrix);
+
+      // Torso
+      dummy.position.set(pos.x, pos.y + 0.1, pos.z);
+      dummy.rotation.set(0, pos.rotY, 0);
+      dummy.updateMatrix();
+      bodyMesh.setMatrixAt(idx, dummy.matrix);
+
+      // Color de camiseta
+      const shirtColor = new THREE.Color(crowdColors[Math.floor(Math.random() * crowdColors.length)]);
+      bodyMesh.setColorAt(idx, shirtColor);
+    });
+    
+    this.scene.add(bodyMesh);
+
+    // Guardar referencias para animaciones y reactividad
+    this.spectatorPositions = spectatorPositions;
+    this.headMesh = headMesh;
+    this.bodyMesh = bodyMesh;
+    this.animDummy = dummy;
 
     // ── BANNERS DEL WORLD PADEL TOUR EN LA ALFOMBRA ROJA ──
     const wptLogoTex = this._makeWPTLogoTexture();
@@ -406,6 +610,19 @@ class GameRenderer3D {
     const refereeSeat = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), seatMat);
     refereeSeat.position.set(ax, 1.8, az);
     this.scene.add(refereeSeat);
+
+    // Árbitro sentado
+    const refGroup = new THREE.Group();
+    refGroup.position.set(ax, 2.0, az);
+    const refTorso = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.35, 0.2), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.6 }));
+    refTorso.position.y = 0.175;
+    refGroup.add(refTorso);
+    const refHead = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.6 }));
+    refHead.position.y = 0.42;
+    refGroup.add(refHead);
+    this.scene.add(refGroup);
+    this.refereeHead = refHead;
+    this.refereeGroup = refGroup;
 
     // 2. Sofás de jugadores
     [-2.2, 2.2].forEach(sz => {
@@ -470,14 +687,31 @@ class GameRenderer3D {
     }
 
     // Foco de luz físico
-    const spot = new THREE.SpotLight(0xfff5ea, 5.0, 30, Math.PI / 4, 0.5, 1.0);
+    const spot = new THREE.SpotLight(0xfff5ea, 6.0, 32, Math.PI / 4.5, 0.4, 1.0);
     spot.position.copy(p3);
     spot.position.y -= 0.1;
     spot.castShadow = true;
-    spot.shadow.mapSize.set(512, 512);
-    spot.shadow.bias = -0.002;
+    spot.shadow.mapSize.set(1024, 1024);
+    spot.shadow.bias = -0.001;
     spot.target.position.set(0, 0, 0);
     
+    // Cono volumétrico de luz sutil
+    const coneGeo = new THREE.ConeGeometry(2.8, 12, 16, 1, true);
+    coneGeo.translate(0, -6, 0);
+    const coneMat = new THREE.MeshBasicMaterial({
+      color: 0xfff5ea,
+      transparent: true,
+      opacity: 0.07,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    const lightCone = new THREE.Mesh(coneGeo, coneMat);
+    lightCone.position.copy(spot.position);
+    lightCone.lookAt(new THREE.Vector3(0, 0, 0));
+    lightCone.rotateX(Math.PI / 2);
+    
+    this.scene.add(lightCone);
     this.scene.add(spot);
     this.scene.add(spot.target);
     this.scene.add(postGroup);
@@ -558,6 +792,37 @@ class GameRenderer3D {
     return new THREE.CanvasTexture(c);
   }
 
+  _makeShirtTexture(colorHex) {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 128;
+    const ctx = c.getContext('2d');
+    
+    const colorStr = '#' + colorHex.toString(16).padStart(6, '0');
+    ctx.fillStyle = colorStr;
+    ctx.fillRect(0, 0, 128, 128);
+    
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(128, 40); ctx.lineTo(128, 60); ctx.lineTo(0, 20); ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.beginPath();
+    ctx.moveTo(0, 80); ctx.lineTo(128, 110); ctx.lineTo(128, 128); ctx.lineTo(0, 98); ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(35, 45, 6, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.font = 'bold 10px Rajdhani, Outfit, sans-serif';
+    ctx.fillText('EVO 27', 65, 50);
+    
+    return c;
+  }
+
   // ═══════════════════════════════════════════════════════════
   // JUGADORES HUMANOIDES
   // ═══════════════════════════════════════════════════════════
@@ -565,10 +830,21 @@ class GameRenderer3D {
     const group = new THREE.Group();
 
     const skinColor = 0xd4a574;
-    const skinMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.7, metalness: 0.0 });
-    const shirtMat = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.05 });
-    const shortsMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7 });
-    const shoeMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.5 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.55, metalness: 0.0 });
+    
+    const shirtCanvas = this._makeShirtTexture(color);
+    const shirtTex = new THREE.CanvasTexture(shirtCanvas);
+    const shirtMat = new THREE.MeshStandardMaterial({ 
+      map: shirtTex, 
+      roughness: 0.5, 
+      metalness: 0.1,
+      envMap: this.envMap,
+      envMapIntensity: 0.4
+    });
+    
+    const shortsMat = new THREE.MeshStandardMaterial({ color: 0x1b1f26, roughness: 0.7 });
+    const shoeMat = new THREE.MeshStandardMaterial({ color: 0xfcfcfc, roughness: 0.4 });
+    const accessoryMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
 
     // ── TORSO (camiseta) ──
     const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.55, 0.28), shirtMat);
@@ -577,24 +853,32 @@ class GameRenderer3D {
     group.add(torso);
 
     // ── CABEZA ──
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), skinMat);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), skinMat);
     head.position.y = 1.6;
     head.castShadow = true;
     group.add(head);
 
-    // Pelo
-    const hairMat = new THREE.MeshStandardMaterial({ color: 0x2a1a0a, roughness: 0.9 });
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.21, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.55), hairMat);
-    hair.position.y = 1.64;
+    // Pelo detallado
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x22150a, roughness: 0.85 });
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.208, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.6), hairMat);
+    hair.position.y = 1.63;
     group.add(hair);
 
+    // Cinta del pelo
+    if (isHuman) {
+      const headband = new THREE.Mesh(new THREE.TorusGeometry(0.202, 0.016, 6, 20), accessoryMat);
+      headband.rotation.x = Math.PI / 2;
+      headband.position.y = 1.62;
+      group.add(headband);
+    }
+
     // ── SHORTS ──
-    const shorts = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.22, 0.27), shortsMat);
+    const shorts = new THREE.Mesh(new THREE.BoxGeometry(0.49, 0.22, 0.272), shortsMat);
     shorts.position.y = 0.72;
     group.add(shorts);
 
     // ── PIERNAS ──
-    const legGeo = new THREE.CylinderGeometry(0.07, 0.06, 0.45, 6);
+    const legGeo = new THREE.CylinderGeometry(0.068, 0.058, 0.45, 8);
     const leftLeg = new THREE.Mesh(legGeo, skinMat);
     leftLeg.position.set(-0.12, 0.38, 0);
     group.add(leftLeg);
@@ -604,8 +888,17 @@ class GameRenderer3D {
     group.userData.leftLeg = leftLeg;
     group.userData.rightLeg = rightLeg;
 
+    // Calcetines
+    const sockGeo = new THREE.CylinderGeometry(0.07, 0.066, 0.16, 8);
+    const leftSock = new THREE.Mesh(sockGeo, accessoryMat);
+    leftSock.position.set(-0.12, 0.22, 0);
+    group.add(leftSock);
+    const rightSock = new THREE.Mesh(sockGeo, accessoryMat);
+    rightSock.position.set(0.12, 0.22, 0);
+    group.add(rightSock);
+
     // ── ZAPATILLAS ──
-    const shoeGeo = new THREE.BoxGeometry(0.1, 0.06, 0.18);
+    const shoeGeo = new THREE.BoxGeometry(0.105, 0.065, 0.19);
     const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
     leftShoe.position.set(-0.12, 0.13, 0.03);
     group.add(leftShoe);
@@ -616,7 +909,7 @@ class GameRenderer3D {
     group.userData.rightShoe = rightShoe;
 
     // ── BRAZOS ──
-    const armGeo = new THREE.CylinderGeometry(0.05, 0.04, 0.4, 6);
+    const armGeo = new THREE.CylinderGeometry(0.048, 0.04, 0.4, 8);
 
     // Brazo izquierdo (libre)
     const leftArm = new THREE.Mesh(armGeo, skinMat);
@@ -624,6 +917,13 @@ class GameRenderer3D {
     leftArm.rotation.z = 0.3;
     group.add(leftArm);
     group.userData.leftArm = leftArm;
+    
+    // Muñequera izquierda
+    const bandGeo = new THREE.CylinderGeometry(0.05, 0.048, 0.06, 8);
+    const leftWristband = new THREE.Mesh(bandGeo, accessoryMat);
+    leftWristband.position.set(-0.32, 0.92, 0);
+    leftWristband.rotation.z = 0.3;
+    group.add(leftWristband);
 
     // Brazo derecho (pala) — pivote
     const rightArmPivot = new THREE.Group();
@@ -635,6 +935,12 @@ class GameRenderer3D {
     rightArm.rotation.z = -0.3;
     rightArmPivot.add(rightArm);
 
+    // Muñequera derecha
+    const rightWristband = new THREE.Mesh(bandGeo, accessoryMat);
+    rightWristband.position.set(0.05, -0.32, 0);
+    rightWristband.rotation.z = -0.3;
+    rightArmPivot.add(rightWristband);
+
     // ── PALA de pádel ──
     const paddleGroup = new THREE.Group();
     paddleGroup.position.set(0.1, -0.42, 0);
@@ -642,14 +948,21 @@ class GameRenderer3D {
     // Mango
     const handle = new THREE.Mesh(
       new THREE.CylinderGeometry(0.025, 0.03, 0.22, 6),
-      new THREE.MeshStandardMaterial({ color: 0x4a2800, roughness: 0.8 })
+      new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 })
     );
     paddleGroup.add(handle);
 
     // Cabeza de pala (forma de lágrima/elipse)
     const paddleHead = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.16, 0.14, 0.03, 12),
-      new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.15, side: THREE.DoubleSide })
+      new THREE.CylinderGeometry(0.16, 0.14, 0.03, 16),
+      new THREE.MeshStandardMaterial({ 
+        color, 
+        roughness: 0.2, 
+        metalness: 0.8, 
+        envMap: this.envMap, 
+        envMapIntensity: 1.8,
+        side: THREE.DoubleSide 
+      })
     );
     paddleHead.rotation.x = Math.PI / 2;
     paddleHead.position.y = -0.16;
@@ -661,7 +974,7 @@ class GameRenderer3D {
       new THREE.PlaneGeometry(0.28, 0.26),
       new THREE.MeshStandardMaterial({
         map: paddleTex, transparent: true, side: THREE.DoubleSide,
-        roughness: 0.5, metalness: 0.1
+        roughness: 0.3, metalness: 0.2
       })
     );
     paddleFace.position.y = -0.16;
@@ -849,18 +1162,46 @@ class GameRenderer3D {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // CÁMARA DINÁMICA — estilo TV deportiva
+  // CÁMARA DINÁMICA — Director de Transmisión TV e IA
   // ═══════════════════════════════════════════════════════════
-  updateCamera(ballPos, dt) {
-    // Seguir la pelota sutilmente en X e Y
-    const targetX = ballPos.x * 0.2;
-    const targetY = 11 + ballPos.y * 0.15;
-    const targetZ = 18;
+  updateCamera(ballPos, dt, playState = 'rally', shotType = 'drive') {
+    let activeCam = 'tv';
+    
+    // Director IA: selecciona la mejor toma
+    if (playState === 'serve') {
+      activeCam = 'end'; // Toma de saque
+    } else if (shotType === 'smash') {
+      activeCam = 'side'; // Toma lateral de remate
+    } else if (shotType === 'lob' || ballPos.y > 3.0) {
+      activeCam = 'cenital'; // Toma elevada
+    }
 
-    this._camBasePos.set(targetX, targetY, targetZ);
-    this._camTarget.lerp(this._camBasePos, dt * 2.0);
+    const targetPos = new THREE.Vector3();
+    const lookPos = new THREE.Vector3().copy(ballPos);
 
-    // Aplicar shake
+    if (activeCam === 'tv') {
+      // Cámara de TV clásica deportiva (lerp suave)
+      targetPos.set(ballPos.x * 0.18, 10.8 + ballPos.y * 0.12, 17.8);
+      lookPos.set(ballPos.x * 0.15, ballPos.y * 0.1, ballPos.z * 0.08);
+    } else if (activeCam === 'end') {
+      // Detrás del jugador de fondo
+      targetPos.set(0, 9.8, 19.5);
+      lookPos.set(ballPos.x * 0.45, ballPos.y * 0.35, ballPos.z * 0.45);
+    } else if (activeCam === 'side') {
+      // Lateral baja con zoom dinámico
+      targetPos.set(13.8, 4.2 + Math.sin(this.frame * 0.008) * 1.5, ballPos.z * 0.2);
+      lookPos.set(ballPos.x * 0.5, ballPos.y * 0.8, ballPos.z * 0.6);
+    } else if (activeCam === 'cenital') {
+      // Plano picado cenital para globos
+      targetPos.set(0, 21.5, ballPos.z * 0.15);
+      lookPos.set(ballPos.x, 0, ballPos.z);
+    }
+
+    // Transiciones fluidas entre cámaras (lerp)
+    this._camTarget.lerp(targetPos, dt * 2.5);
+    this._lookTarget.lerp(lookPos, dt * 3.0);
+
+    // Vibración por Impactos (Camera Shake)
     if (this.shakeIntensity > 0.01) {
       this._camTarget.x += (Math.random() - 0.5) * this.shakeIntensity;
       this._camTarget.y += (Math.random() - 0.5) * this.shakeIntensity * 0.5;
@@ -868,74 +1209,300 @@ class GameRenderer3D {
     }
 
     this.camera.position.copy(this._camTarget);
-
-    // Look target: sigue la pelota más sutilmente
-    const lookX = ballPos.x * 0.15;
-    const lookY = ballPos.y * 0.2;
-    const lookZ = ballPos.z * 0.1;
-    this._lookTarget.lerp(new THREE.Vector3(lookX, lookY, lookZ), dt * 2.5);
     this.camera.lookAt(this._lookTarget);
   }
 
   // ═══════════════════════════════════════════════════════════
   // ANIMACIÓN DE JUGADORES HUMANOIDES
   // ═══════════════════════════════════════════════════════════
-  animatePlayer(group, frame, isSwinging) {
-    const speed = 0.1;
+  animatePlayer(group, frame, isSwinging, ballPos, playerObj) {
+    const dt = 0.016;
 
-    // Bobbing sutil al caminar
-    const bob = Math.sin(frame * 0.12 + group.position.x * 3) * 0.04;
-    if (group.children[1]) group.children[1].position.y = 1.6 + bob; // Cabeza
+    // Detección de velocidad y desplazamiento
+    const prevX = group.userData.lastX !== undefined ? group.userData.lastX : group.position.x;
+    const prevZ = group.userData.lastZ !== undefined ? group.userData.lastZ : group.position.z;
+    const dx = group.position.x - prevX;
+    const dz = group.position.z - prevZ;
+    const distMoved = Math.sqrt(dx * dx + dz * dz) / dt;
 
-    // Piernas: animación de caminar
+    group.userData.lastX = group.position.x;
+    group.userData.lastZ = group.position.z;
+
+    // 1. Clasificación del Estado de Animación (Animation State Machine)
+    let state = 'idle';
+    if (distMoved > 7.0) state = 'sprint';
+    else if (distMoved > 3.0) state = 'run';
+    else if (distMoved > 0.3) state = 'walk';
+
+    // Ready Position si el balón está cerca
+    const distToBall = ballPos ? group.position.distanceTo(ballPos) : 999;
+    if (state === 'idle' && distToBall < 4.0) {
+      state = 'ready';
+    }
+
+    // Golpes (Anticipación / Preparación deportiva)
+    if (isSwinging) {
+      if (ballPos && ballPos.y > 2.2) state = 'smash';
+      else if (ballPos && ballPos.y > 1.4) state = 'bandeja';
+      else if (group.position.z * (ballPos ? (ballPos.z - group.position.z) : 1) < 0) state = 'forehand';
+      else state = 'backhand';
+    }
+
+    group.userData.animState = state;
+
+    // 2. Blend Trees & Procedural Rotations
+    let targetLegSpeed = 0.18;
+    let targetLegRot = 0;
+    let targetBodyY = 0;
+    let targetTorsoRotY = 0;
+    let targetTorsoRotX = 0;
+
+    if (state === 'ready') {
+      targetLegRot = 0.15;
+      targetBodyY = -0.08;
+      targetLegSpeed = 0.05;
+    } else if (state === 'walk') {
+      targetLegRot = Math.sin(frame * 0.15) * 0.28;
+      targetLegSpeed = 0.15;
+    } else if (state === 'run') {
+      targetLegRot = Math.sin(frame * 0.2) * 0.45;
+      targetBodyY = -0.05;
+      targetLegSpeed = 0.2;
+    } else if (state === 'sprint') {
+      targetLegRot = Math.sin(frame * 0.24) * 0.6;
+      targetBodyY = -0.1;
+      targetLegSpeed = 0.24;
+      targetTorsoRotX = 0.15;
+    } else if (state === 'smash') {
+      targetLegRot = 0.3;
+      targetBodyY = 0.2;
+      targetTorsoRotX = -0.2;
+      targetTorsoRotY = 0.4;
+    } else if (state === 'bandeja') {
+      targetLegRot = 0.1;
+      targetBodyY = -0.04;
+      targetTorsoRotY = -0.5;
+    }
+
+    // Deslizar al frenar (Slide)
+    const prevSpeed = group.userData.lastSpeed !== undefined ? group.userData.lastSpeed : 0;
+    group.userData.lastSpeed = distMoved;
+    if (prevSpeed - distMoved > 4.5 && distMoved < 1.0) {
+      targetBodyY = -0.15;
+      targetLegRot = 0.5;
+      this.addParticles3D(group.position.x, 0.05, group.position.z, 0xffffff, 4, 0.4);
+    }
+
+    // Lerps
+    group.userData.leftLegRot = THREE.MathUtils.lerp(group.userData.leftLegRot || 0, targetLegRot, 0.2);
+    group.userData.rightLegRot = THREE.MathUtils.lerp(group.userData.rightLegRot || 0, -targetLegRot, 0.2);
+    group.userData.bodyY = THREE.MathUtils.lerp(group.userData.bodyY || 0, targetBodyY, 0.15);
+    group.userData.torsoRotX = THREE.MathUtils.lerp(group.userData.torsoRotX || 0, targetTorsoRotX, 0.15);
+    group.userData.torsoRotY = THREE.MathUtils.lerp(group.userData.torsoRotY || 0, targetTorsoRotY, 0.15);
+
     const leftLeg = group.userData.leftLeg;
     const rightLeg = group.userData.rightLeg;
-    const leftShoe = group.userData.leftShoe;
-    const rightShoe = group.userData.rightShoe;
+    const torso = group.children[0];
+
     if (leftLeg && rightLeg) {
-      const walkCycle = Math.sin(frame * 0.15 + group.position.x) * 0.25;
-      leftLeg.rotation.x = walkCycle;
-      rightLeg.rotation.x = -walkCycle;
-      if (leftShoe) leftShoe.position.z = 0.03 + Math.sin(frame * 0.15 + group.position.x) * 0.04;
-      if (rightShoe) rightShoe.position.z = 0.03 - Math.sin(frame * 0.15 + group.position.x) * 0.04;
+      leftLeg.rotation.x = group.userData.leftLegRot;
+      rightLeg.rotation.x = group.userData.rightLegRot;
+    }
+    if (torso) {
+      torso.rotation.x = group.userData.torsoRotX;
+      torso.rotation.y = group.userData.torsoRotY;
+      torso.position.y = 1.1 + group.userData.bodyY;
     }
 
-    // Brazo izquierdo: balanceo natural
-    const leftArm = group.userData.leftArm;
-    if (leftArm) {
-      leftArm.rotation.x = Math.sin(frame * 0.15 + group.position.x + Math.PI) * 0.2;
+    // 3. Inverse Kinematics (IK)
+    // Cabeza sigue el balón
+    if (ballPos && group.children[1]) {
+      const head = group.children[1];
+      const relBall = new THREE.Vector3().copy(ballPos).sub(group.position);
+      const targetHeadRotY = Math.atan2(relBall.x, relBall.z);
+      head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, targetHeadRotY - group.rotation.y, 0.15);
     }
 
-    // Brazo derecho: swing de pala
+    // Brazo dominante alinea pala
     const rightArmPivot = group.userData.rightArmPivot;
     if (rightArmPivot) {
       if (isSwinging) {
-        // Animación de golpe: brazo va hacia adelante y vuelve
-        group.userData.swingPhase = Math.min((group.userData.swingPhase || 0) + 0.12, Math.PI);
+        group.userData.swingPhase = Math.min((group.userData.swingPhase || 0) + 0.16, Math.PI);
         const swingT = Math.sin(group.userData.swingPhase);
-        rightArmPivot.rotation.x = -0.8 * swingT; // Hacia adelante
-        rightArmPivot.rotation.z = -0.4 * swingT;  // Hacia afuera
+        
+        let swingX = -1.2 * swingT;
+        let swingZ = -0.6 * swingT;
+        
+        if (state === 'smash') {
+          swingX = -1.6 * swingT;
+          swingZ = 0.2 * swingT;
+        } else if (state === 'bandeja') {
+          swingX = -0.9 * swingT;
+          swingZ = -0.8 * swingT;
+        }
+        
+        group.userData.rightArmPivotRotX = THREE.MathUtils.lerp(group.userData.rightArmPivotRotX || 0, swingX, 0.3);
+        group.userData.rightArmPivotRotZ = THREE.MathUtils.lerp(group.userData.rightArmPivotRotZ || 0, swingZ, 0.3);
       } else {
-        // Posición de espera
         group.userData.swingPhase = 0;
-        rightArmPivot.rotation.x = rightArmPivot.rotation.x * 0.9; // Suavizar vuelta
-        rightArmPivot.rotation.z = rightArmPivot.rotation.z * 0.9;
+        group.userData.rightArmPivotRotX = THREE.MathUtils.lerp(group.userData.rightArmPivotRotX || 0, 0, 0.2);
+        group.userData.rightArmPivotRotZ = THREE.MathUtils.lerp(group.userData.rightArmPivotRotZ || 0, 0, 0.2);
       }
-    }
-
-    // Aura del jugador humano
-    if (group.userData.ring) {
-      group.userData.ring.material.opacity = 0.4 + Math.sin(frame * 0.06) * 0.2;
-    }
-    if (group.userData.arrow) {
-      group.userData.arrow.position.y = 1.95 + Math.sin(frame * 0.08) * 0.08;
-      group.userData.arrow.material.opacity = 0.5 + Math.sin(frame * 0.06) * 0.2;
+      rightArmPivot.rotation.x = group.userData.rightArmPivotRotX;
+      rightArmPivot.rotation.z = group.userData.rightArmPivotRotZ;
     }
 
     // Rotar jugador para que mire hacia la red
     const lookZ = group.position.z > 0 ? -1 : 1;
     const targetRotY = Math.atan2(0, lookZ);
-    group.rotation.y += (targetRotY - group.rotation.y) * 0.1;
+    group.rotation.y += (targetRotY - group.rotation.y) * 0.15;
+  }
+
+  setQualityLevel(level) {
+    this.quality = level;
+    console.log("AI Graphics Studio: Graphic quality set to " + level.toUpperCase());
+    
+    const hasShadows = (level !== 'bajo');
+    const shadowSize = (level === 'ultra') ? 2048 : (level === 'alto') ? 1024 : 512;
+    
+    this.sun.castShadow = hasShadows;
+    if (hasShadows && this.sun.shadow.map) {
+      this.sun.shadow.mapSize.set(shadowSize, shadowSize);
+      this.sun.shadow.map.setSize(shadowSize, shadowSize);
+    }
+    
+    // Alternar visibilidad de conos de luz volumétrica según calidad
+    this.scene.traverse(node => {
+      if (node.isMesh && node.material && node.material.blending === THREE.AdditiveBlending) {
+        node.visible = (level === 'ultra' || level === 'alto');
+      }
+    });
+  }
+
+  _setupProfiler() {
+    this.lastProfilerTime = performance.now();
+    this.fpsCount = 0;
+    this.fps = 0;
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'aaa-profiler';
+    overlay.style.cssText = 'position:fixed;top:10px;left:10px;z-index:9999;background:rgba(5,10,20,0.85);border:1px solid #00d4ff;color:#00d4ff;padding:12px;border-radius:8px;font-family:monospace;font-size:11px;pointer-events:all;box-shadow:0 0 15px rgba(0,212,255,0.15);backdrop-filter:blur(6px);min-width:180px;';
+    
+    overlay.innerHTML = `
+      <div style="font-weight:bold;margin-bottom:6px;border-bottom:1px solid #00d4ff33;padding-bottom:4px;letter-spacing:1px;">⚡ AAA ENGINE PROFILER</div>
+      <div>FPS: <span id="prof-fps" style="color:#00ff87">--</span></div>
+      <div>Render Time: <span id="prof-time" style="color:#ffd700">-- ms</span></div>
+      <div>Draw Calls: <span id="prof-draws">--</span></div>
+      <div>Triangles: <span id="prof-tris">--</span></div>
+      <div style="margin-top:6px;border-top:1px solid #00d4ff33;padding-top:4px;">
+        <select id="prof-quality" style="background:#091224;color:#00d4ff;border:1px solid #00d4ff66;font-size:10px;border-radius:4px;width:100%;padding:2px;cursor:pointer;">
+          <option value="low">Calidad: Baja</option>
+          <option value="medium">Calidad: Media</option>
+          <option value="high">Calidad: Alta</option>
+          <option value="ultra" selected>Calidad: Ultra (WebGPU)</option>
+        </select>
+      </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    const select = document.getElementById('prof-quality');
+    select.value = this.quality === 'ultra' ? 'ultra' : this.quality === 'alto' ? 'high' : this.quality === 'medium' ? 'medium' : 'low';
+    select.addEventListener('change', (e) => {
+      const level = e.target.value === 'high' ? 'alto' : e.target.value;
+      this.setQualityLevel(level);
+    });
+  }
+
+  updateProfiler(dt) {
+    if (!this.lastProfilerTime) this._setupProfiler();
+    
+    this.fpsCount++;
+    const now = performance.now();
+    if (now - this.lastProfilerTime >= 1000) {
+      this.fps = this.fpsCount;
+      this.fpsCount = 0;
+      this.lastProfilerTime = now;
+      
+      const fpsEl = document.getElementById('prof-fps');
+      const timeEl = document.getElementById('prof-time');
+      const drawsEl = document.getElementById('prof-draws');
+      const trisEl = document.getElementById('prof-tris');
+      
+      if (fpsEl) {
+        fpsEl.textContent = this.fps;
+        fpsEl.style.color = this.fps >= 100 ? '#00ff87' : this.fps >= 60 ? '#ffd700' : '#ff3366';
+      }
+      
+      if (timeEl && this.renderer.info) {
+        timeEl.textContent = (dt * 1000).toFixed(1) + ' ms';
+      }
+      
+      if (drawsEl && this.renderer.info) {
+        drawsEl.textContent = this.renderer.info.render.calls;
+      }
+      
+      if (trisEl && this.renderer.info) {
+        trisEl.textContent = this.renderer.info.render.triangles.toLocaleString();
+      }
+    }
+  }
+
+  // ── SISTEMA DE CLIMA DINÁMICO (Lluvia) ───────────────────────
+  setWeather(type) {
+    this.weatherType = type;
+    if (type === 'lluvia') {
+      console.log("AI Graphics Studio: Activando lluvia dinámica...");
+      const rainGeo = new THREE.BufferGeometry();
+      const rainCount = 800;
+      const positions = new Float32Array(rainCount * 3);
+      for (let i = 0; i < rainCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 30;
+        positions[i + 1] = Math.random() * 15;
+        positions[i + 2] = (Math.random() - 0.5) * 40;
+      }
+      rainGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const rainMat = new THREE.PointsMaterial({
+        color: 0x88ccff,
+        size: 0.08,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending
+      });
+      this.rainParticles = new THREE.Points(rainGeo, rainMat);
+      this.scene.add(this.rainParticles);
+      
+      // Mojar la cancha para aumentar reflectividad
+      if (this.courtGroup) {
+        this.courtGroup.traverse(node => {
+          if (node.isMesh && node.material && node.name !== 'line') {
+            node.material.roughness = Math.max(0.1, node.material.roughness * 0.4);
+            node.material.metalness = Math.min(0.9, node.material.metalness + 0.3);
+          }
+        });
+      }
+    } else {
+      if (this.rainParticles) {
+        this.scene.remove(this.rainParticles);
+        this.rainParticles = null;
+      }
+    }
+  }
+
+  _updateWeather() {
+    if (this.weatherType === 'lluvia' && this.rainParticles) {
+      const positions = this.rainParticles.geometry.attributes.position.array;
+      for (let i = 1; i < positions.length; i += 3) {
+        positions[i] -= 0.28;
+        if (positions[i] < 0) {
+          positions[i] = 15;
+          if (Math.random() < 0.05) {
+            this.addParticles3D(positions[i-1], 0.05, positions[i+1], 0x88ccff, 3, 0.2);
+          }
+        }
+      }
+      this.rainParticles.geometry.attributes.position.needsUpdate = true;
+    }
   }
 
   resize(W, H) {
@@ -947,21 +1514,70 @@ class GameRenderer3D {
   render(ballPos, players, ballSpeed, frame, dt) {
     this.frame++;
 
-    // Trail y sombra
-    if (ballPos) this.updateBallTrail(ballPos, ballSpeed);
+    if (this.frame === 1) {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      this.setQualityLevel(isMobile ? 'medio' : 'ultra');
+      this._setupProfiler();
+      this.setWeather('lluvia');
+    }
 
-    // Partículas
+    // Actualizar clima y partículas
+    this._updateWeather();
+    if (ballPos) this.updateBallTrail(ballPos, ballSpeed);
     this._updateParticles();
 
-    // Animaciones de jugadores
+    // Animaciones de jugadores (con paso de ballPos y objeto jugador)
     players.forEach(p => {
-      if (p.mesh) this.animatePlayer(p.mesh, frame, p.isSwinging);
+      if (p.mesh) this.animatePlayer(p.mesh, frame, p.isSwinging, ballPos, p);
     });
 
-    // Cámara dinámica
-    if (ballPos) this.updateCamera(ballPos, dt);
+    // Árbitro head-tracking
+    if (this.refereeHead && ballPos) {
+      const relBall = new THREE.Vector3().copy(ballPos).sub(this.refereeGroup.position);
+      this.refereeHead.rotation.y = THREE.MathUtils.lerp(this.refereeHead.rotation.y, Math.atan2(relBall.x, relBall.z), 0.15);
+    }
 
-    // Render
+    // Animar espectadores instanciados (celebración/movimiento)
+    if (this.headMesh && this.bodyMesh && this.spectatorPositions) {
+      const crowdTime = frame * 0.08;
+      const dummy = this.animDummy;
+      this.spectatorPositions.forEach((pos, idx) => {
+        const offset = Math.sin(crowdTime + idx * 0.5) * 0.06;
+        
+        dummy.position.set(pos.x, pos.y + 0.38 + Math.max(0, offset), pos.z);
+        dummy.rotation.set(0, pos.rotY, 0);
+        dummy.updateMatrix();
+        this.headMesh.setMatrixAt(idx, dummy.matrix);
+
+        dummy.position.set(pos.x, pos.y + 0.1 + Math.max(0, offset), pos.z);
+        dummy.rotation.set(0, pos.rotY, 0);
+        dummy.updateMatrix();
+        this.bodyMesh.setMatrixAt(idx, dummy.matrix);
+      });
+      this.headMesh.instanceMatrix.needsUpdate = true;
+      this.bodyMesh.instanceMatrix.needsUpdate = true;
+    }
+
+    // Deducir estado de la jugada para el Director IA de Cámara
+    let playState = 'rally';
+    let shotType = 'drive';
+    players.forEach(p => {
+      if (p.mesh && p.mesh.userData.animState) {
+        if (p.mesh.userData.animState === 'smash' || p.mesh.userData.animState === 'bandeja' || p.mesh.userData.animState === 'lob') {
+          shotType = p.mesh.userData.animState;
+        }
+      }
+    });
+    if (!this.ballMesh.visible || ballSpeed < 1.0) {
+      playState = 'serve';
+    }
+
+    if (ballPos) this.updateCamera(ballPos, dt, playState, shotType);
+
+    // Actualizar el perfilador
+    this.updateProfiler(dt);
+
+    // Renderizado
     this.renderer.render(this.scene, this.camera);
   }
 }

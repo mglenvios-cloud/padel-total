@@ -1,0 +1,68 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PLAYER
+  COACH
+  CLUB_MANAGER
+  TOURNAMENT_ADMIN
+  SUPER_ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+model User {
+  id                Int           @id @default(autoincrement())
+  email             String        @unique
+  password          String
+  name              String
+  nationality       String        @default("ES")
+  age               Int           @default(22)
+  role              Role          @default(PLAYER)
+  status            AccountStatus @default(ACTIVE)
+  emailVerified     Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  lastLogin         DateTime?
+  
+  // Jugador y estadísticas
+  elo               Int           @default(1000)
+  xp                Int           @default(0)
+  level             Int           @default(1)
+  wins              Int           @default(0)
+  losses            Int           @default(0)
+  achievements      String[]      // Logros desbloqueados
+  
+  clubId            Int?
+  club              Club?         @relation(fields: [clubId], references: [id])
+  matches           Match[]       @relation("MatchPlayers")
+}
+
+model Club {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  balance         Float    @default(10000.0)
+  facilitiesLevel Int      @default(1)
+  sponsors        String[]
+  members         User[]
+}
+
+model Match {
+  id        Int      @id @default(autoincrement())
+  playedAt  DateTime @default(now())
+  duration  Int      @default(0)
+  score     String
+  replayId  String?
+  season    Int      @default(1)
+  
+  players   User[]   @relation("MatchPlayers")
+}

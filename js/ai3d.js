@@ -65,7 +65,6 @@ class AIController3D {
    * @returns {{ targetX, targetZ }} posición objetivo
    */
   update(ballPos, ballVel, allPlayers, frame) {
-    // Temporizador de reacción
     if (this.decisionTimer > 0) {
       this.decisionTimer--;
       return { targetX: this.targetX, targetZ: this.targetZ };
@@ -75,68 +74,91 @@ class AIController3D {
     const p = this.player;
     const isTeam0 = p.team === 0;
 
+    // Inicializar y gestionar fatiga del jugador
+    if (p.fatigue === undefined) p.fatigue = 0;
+    if (this.state === 'move_to_ball') {
+      p.fatigue = Math.min(100, p.fatigue + 0.4);
+    } else {
+      p.fatigue = Math.max(0, p.fatigue - 0.25);
+    }
+
+    // Dificultad adaptativa ajustada por fatiga
+    const fatigueFactor = 1.0 - (p.fatigue / 100) * 0.18;
+    this.profile.maxSpeed = (AI3D_PROFILES[this.difficulty] || AI3D_PROFILES.medium).maxSpeed * fatigueFactor;
+
     // Límites de mi mitad
     const myHalfZ = isTeam0
-      ? { min: 0.3, max: 9.8 }   // team 0: Z > 0
-      : { min: -9.8, max: -0.3 }; // team 1: Z < 0
+      ? { min: 0.3, max: 9.8 }
+      : { min: -9.8, max: -0.3 };
 
-    // ¿La pelota está en mi mitad?
     const ballInMyHalf = isTeam0 ? ballPos.z > 0 : ballPos.z < 0;
-
-    // ¿La pelota viene hacia mí?
     const ballComingToMe = isTeam0 ? ballVel.z > 0 : ballVel.z < 0;
 
-    // Anticipar posición de la pelota
-    const antFrames = 10 + (1 - this.profile.anticipation) * 25;
-    const dt = antFrames / 60; // convertir frames a segundos
-    const predictedX = ballPos.x + ballVel.x * dt;
-    const predictedZ = ballPos.z + ballVel.z * dt;
+    // 1. Anticipación de Rebotes en Paredes de Cristal
+    let predictedX = ballPos.x + ballVel.x * 0.3;
+    let predictedZ = ballPos.z + ballVel.z * 0.3;
 
-    // Distancia a la pelota
+    if (predictedZ > 10) {
+      predictedZ = 10 - (predictedZ - 10) * 0.85;
+    } else if (predictedZ < -10) {
+      predictedZ = -10 - (predictedZ + 10) * 0.85;
+    }
+    if (predictedX > 5) {
+      predictedX = 5 - (predictedX - 5) * 0.85;
+    } else if (predictedX < -5) {
+      predictedX = -5 - (predictedX + 5) * 0.85;
+    }
+
     const dx = ballPos.x - p.mesh.position.x;
     const dz = ballPos.z - p.mesh.position.z;
     const distToBall = Math.sqrt(dx * dx + dz * dz);
 
-    if (ballInMyHalf && ballComingToMe && distToBall < 8) {
-      // ── Ir a buscar la pelota ──
+    // 2. Posicionamiento Colectivo y Táctico
+    const partner = allPlayers.find(pl => pl.team === p.team && pl.id !== p.id);
+    const partnerAtNet = partner ? (isTeam0 ? partner.mesh.position.z < 4.5 : partner.mesh.position.z > -4.5) : false;
+
+    if (ballInMyHalf && ballComingToMe && distToBall < 8.5) {
       this.state = 'move_to_ball';
 
-      // Ruido en posicionamiento según habilidad
-      const noise = (1 - this.profile.accuracy) * 1.5;
+      const noise = (1 - this.profile.accuracy) * 1.1;
       this.targetX = predictedX + (Math.random() - 0.5) * noise;
       this.targetZ = predictedZ + (Math.random() - 0.5) * noise;
 
-      // Clamp a mi mitad
-      this.targetX = Math.max(-4.3, Math.min(4.3, this.targetX));
-      this.targetZ = Math.max(myHalfZ.min, Math.min(myHalfZ.max, this.targetZ));
-
-    } else {
-      // ── Volver a posición táctica (T) ──
-      this.state = 'recover';
-
-      // Posición base según team
-      const baseZ = isTeam0
-        ? myHalfZ.min + (myHalfZ.max - myHalfZ.min) * 0.35
-        : myHalfZ.min + (myHalfZ.max - myHalfZ.min) * 0.65;
-
-      // Sesgo lateral hacia la pelota
-      const lateralBias = ballPos.x * this.profile.positioningSkill * 0.3;
-      this.targetX = p.startX * 0.5 + lateralBias;
-      this.targetZ = baseZ;
-
-      // Separarse del compañero
-      const partner = allPlayers.find(pl => pl.team === p.team && pl.id !== p.id);
-      if (partner) {
-        const sepX = p.mesh.position.x - partner.mesh.position.x;
-        if (Math.abs(sepX) < 2) {
-          this.targetX += sepX > 0 ? 0.8 : -0.8;
+      // Comunicar intención de golpeo
+      if (this.player.team === 0 && Math.random() < 0.08) {
+        const msgBox = document.getElementById('ai-message');
+        if (msgBox) {
+          msgBox.textContent = "¡Voy yo! 🎾";
+          msgBox.classList.add('visible');
+          setTimeout(() => msgBox.classList.remove('visible'), 1200);
         }
       }
+    } else {
+      // Pareja profesional: Cobertura sincronizada
+      this.state = partnerAtNet ? 'offensive' : 'defensive';
 
-      // Clamp
-      this.targetX = Math.max(-4.3, Math.min(4.3, this.targetX));
-      this.targetZ = Math.max(myHalfZ.min, Math.min(myHalfZ.max, this.targetZ));
+      if (this.state === 'offensive') {
+        // Subir a bloquear voleas a la red
+        this.targetZ = isTeam0 ? 2.5 : -2.5;
+        this.targetX = p.startX * 0.6 + ballPos.x * 0.25;
+      } else {
+        // Defender en el fondo
+        this.targetZ = isTeam0 ? 7.6 : -7.6;
+        this.targetX = p.startX * 0.8 + ballPos.x * 0.2;
+      }
+
+      // Evitar colisión / Cruzamiento estúpido
+      if (partner) {
+        const sepX = p.mesh.position.x - partner.mesh.position.x;
+        if (Math.abs(sepX) < 2.2) {
+          this.targetX += sepX > 0 ? 0.9 : -0.9;
+        }
+      }
     }
+
+    // Clamps
+    this.targetX = Math.max(-4.3, Math.min(4.3, this.targetX));
+    this.targetZ = Math.max(myHalfZ.min, Math.min(myHalfZ.max, this.targetZ));
 
     return { targetX: this.targetX, targetZ: this.targetZ };
   }

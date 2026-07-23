@@ -115,7 +115,7 @@ class PadelGame3D {
 
   _setupPhysicsEvents() {
     this.physics.onBounce = (e) => {
-      this.audio.playBounce(e.y);
+      this.audio.playBounce(e.y, e.x, e.z);
       this.renderer3d.addParticles3D(e.x, 0.1, e.z, 0xffffff, 5, 0.5);
       // 2 botes → punto
       if (this.physics.ballBody.userData.bounces >= 2 && this.state === STATE3D.IN_PLAY) {
@@ -125,12 +125,12 @@ class PadelGame3D {
     };
 
     this.physics.onWall = (e) => {
-      this.audio.playWall();
+      this.audio.playWall(e.x, e.z);
       this.renderer3d.addParticles3D(e.x, e.y, e.z, 0x00d4ff, 6, 0.7);
     };
 
     this.physics.onNet = (e) => {
-      this.audio.playNet();
+      this.audio.playNet(e.x, e.z);
       this.renderer3d.addParticles3D(e.x, e.y, e.z, 0xffffff, 8, 0.6);
       if (this.state === STATE3D.IN_PLAY) {
         const scoringTeam = 1 - (this.physics.ballBody.userData.lastHitTeam ?? 0);
@@ -192,12 +192,66 @@ class PadelGame3D {
 
     if (this.state === STATE3D.TRAINING) { this._updateTraining(dt); return; }
 
+    // Grabación de Replay Buffer en tiempo real
+    if (this.state === STATE3D.IN_PLAY || this.state === STATE3D.WAITING_SERVE) {
+      if (!this.replayBuffer) this.replayBuffer = [];
+      const bp = this.physics.ballBody.position;
+      this.replayBuffer.push({
+        ballPos: new THREE.Vector3(bp.x, bp.y, bp.z),
+        ballSpeed: this.ballSpeed,
+        players: this.players.map(p => ({
+          x: p.mesh.position.x,
+          z: p.mesh.position.z,
+          isSwinging: p.isSwinging,
+          animState: p.mesh.userData.animState
+        }))
+      });
+      if (this.replayBuffer.length > 500) this.replayBuffer.shift();
+    }
+
     if (this.state === STATE3D.WAITING_SERVE) { this._updateServe(dt); return; }
 
     if (this.state === STATE3D.POINT_SCORED) {
       this.pointTimer -= dt;
-      if (this.pointTimer <= 0) this._resetAfterPoint();
-      this._movePlayers(dt);
+      if (this.pointTimer <= 0) {
+        this.isReplaying = false;
+        const repEl = document.getElementById('replay-indicator');
+        if (repEl) repEl.style.display = 'none';
+        this._resetAfterPoint();
+      }
+      
+      // Reproducción de Replay en Cámara Lenta (Replay System)
+      if (this.replayBuffer && this.replayBuffer.length > 50) {
+        if (!this.isReplaying) {
+          this.isReplaying = true;
+          this.replayIndex = Math.max(0, this.replayBuffer.length - 180);
+        }
+        const frameData = this.replayBuffer[this.replayIndex];
+        if (frameData) {
+          this.ballMesh.position.copy(frameData.ballPos);
+          this.ballMesh.visible = true;
+          this.players.forEach((p, idx) => {
+            const pData = frameData.players[idx];
+            if (pData) {
+              p.mesh.position.x = pData.x;
+              p.mesh.position.z = pData.z;
+              p.isSwinging = pData.isSwinging;
+              p.mesh.userData.animState = pData.animState;
+            }
+          });
+          
+          const repEl = document.getElementById('replay-indicator');
+          if (repEl) repEl.style.display = 'block';
+          
+          if (this.frame % 2 === 0) {
+            this.replayIndex++;
+            if (this.replayIndex >= this.replayBuffer.length) {
+              this.isReplaying = false;
+              if (repEl) repEl.style.display = 'none';
+            }
+          }
+        }
+      }
       return;
     }
 
@@ -260,7 +314,7 @@ class PadelGame3D {
     this.ballMesh.visible = true;
     this.state = STATE3D.IN_PLAY;
     this.ui.hideServeIndicator();
-    this.audio.playHit(0.7, 'drive');
+    this.audio.playHit(0.7, 'drive', fromX, fromZ);
     server.isSwinging = true; server.swingTimer = 18;
   }
 
@@ -270,7 +324,24 @@ class PadelGame3D {
     const bp = this.physics.ballBody.position;
     const bv = this.physics.ballBody.velocity;
 
-    // Jugador humano — flechas
+    // Pasos y respiración del jugador humano
+    if (human.stepTimer === undefined) human.stepTimer = 0;
+    if (human.breathTimer === undefined) human.breathTimer = 0;
+    
+    const humanMoving = Math.abs(mv.x) > 0.1 || Math.abs(mv.y) > 0.1;
+    if (humanMoving) {
+      human.stepTimer += dt;
+      if (human.stepTimer > 0.32) {
+        this.audio.playStep(human.mesh.position.x, human.mesh.position.z);
+        human.stepTimer = 0;
+      }
+      human.breathTimer += dt;
+      if (human.breathTimer > 1.8) {
+        this.audio.playBreath(human.mesh.position.x, human.mesh.position.z);
+        human.breathTimer = 0;
+      }
+    }
+
     human.mesh.position.x = Math.max(-4.5, Math.min(4.5, human.mesh.position.x + mv.x * human.speed * dt));
     human.mesh.position.z = Math.max(0.3,  Math.min(9.8, human.mesh.position.z + mv.y * human.speed * dt));
 
@@ -282,11 +353,24 @@ class PadelGame3D {
       const ai = this.aiControllers[i];
       if (!ai) return;
 
-      // Actualizar decisión táctica
-      ai.update(bp, bv, this.players, this.frame);
+      const oldX = p.mesh.position.x;
+      const oldZ = p.mesh.position.z;
 
-      // Mover hacia objetivo
+      ai.update(bp, bv, this.players, this.frame);
       ai.moveToTarget(dt);
+
+      // Pasos del jugador de la IA
+      const dx = p.mesh.position.x - oldX;
+      const dz = p.mesh.position.z - oldZ;
+      const moved = Math.sqrt(dx * dx + dz * dz);
+      if (p.stepTimer === undefined) p.stepTimer = 0;
+      if (moved > 0.005) {
+        p.stepTimer += dt;
+        if (p.stepTimer > 0.35) {
+          this.audio.playStep(p.mesh.position.x, p.mesh.position.z);
+          p.stepTimer = 0;
+        }
+      }
     });
   }
 
@@ -332,7 +416,7 @@ class PadelGame3D {
 
       const playerPos = { x: p.mesh.position.x, y: 0, z: p.mesh.position.z };
       this.physics.hit(playerPos, shotType, power, target.x, target.z, p.team);
-      this.audio.playHit(power, shotType);
+      this.audio.playHit(power, shotType, p.mesh.position.x, p.mesh.position.z);
       this.renderer3d.addParticles3D(p.mesh.position.x, 1, p.mesh.position.z, p.color, 8, power);
       p.isSwinging = true; p.swingTimer = 18;
 
@@ -359,7 +443,7 @@ class PadelGame3D {
     const toZ = -(2 + Math.random() * 7); // Hacia campo rival (Z<0)
 
     this.physics.hit(playerPos, shotType, power, toX, toZ, 0);
-    this.audio.playHit(power, shotType);
+    this.audio.playHit(power, shotType, human.mesh.position.x, human.mesh.position.z);
     this.renderer3d.addParticles3D(human.mesh.position.x, 1, human.mesh.position.z, 0x00d4ff, 10, power);
     human.isSwinging = true; human.swingTimer = 18;
 
@@ -397,6 +481,16 @@ class PadelGame3D {
     const result = this.scoring.addPoint(team, type);
 
     this.audio.playPoint(team === 0);
+    
+    // Árbitro canta la jugada y público reacciona
+    if (reason === 'error' || reason === 'net') {
+      this.audio.playRefereeCall('out');
+      this.audio.playCrowdClap();
+    } else {
+      this.audio.playRefereeCall('in');
+      this.audio.playCrowdCheer();
+    }
+
     const bp = this.physics.ballBody.position;
     this.renderer3d.addParticles3D(bp.x, bp.y, bp.z, team === 0 ? 0x00ff87 : 0xff6b35, 20, 1);
 
@@ -455,7 +549,7 @@ class PadelGame3D {
       if (this.physics.canPlayerHit(playerPos)) {
         const shotType = this.input.getShotType();
         this.physics.hit(playerPos, shotType, power, (Math.random()-0.5)*8, -(2+Math.random()*7), 0);
-        this.audio.playHit(power, shotType);
+        this.audio.playHit(power, shotType, human.mesh.position.x, human.mesh.position.z);
         this.renderer3d.addParticles3D(human.mesh.position.x, 1, human.mesh.position.z, 0x00d4ff, 8, power);
         this.trainingStats.hits++;
         this.trainingStats.streak++;
