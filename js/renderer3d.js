@@ -846,115 +846,140 @@ class GameRenderer3D {
     const shoeMat = new THREE.MeshStandardMaterial({ color: 0xfcfcfc, roughness: 0.4 });
     const accessoryMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
 
-    // ── TORSO (camiseta) ──
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.55, 0.28), shirtMat);
+    // ── TORSO ATLÉTICO (Cono/Cilindro deportivo) ──
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.55, 8), shirtMat);
     torso.position.y = 1.1;
     torso.castShadow = true;
     group.add(torso);
 
     // ── CABEZA ──
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), skinMat);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), skinMat);
     head.position.y = 1.6;
     head.castShadow = true;
     group.add(head);
 
-    // Pelo detallado
+    // Cabello
     const hairMat = new THREE.MeshStandardMaterial({ color: 0x22150a, roughness: 0.85 });
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.208, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.6), hairMat);
-    hair.position.y = 1.63;
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.188, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.6), hairMat);
+    hair.position.y = 1.62;
     group.add(hair);
 
-    // Cinta del pelo
-    if (isHuman) {
-      const headband = new THREE.Mesh(new THREE.TorusGeometry(0.202, 0.016, 6, 20), accessoryMat);
-      headband.rotation.x = Math.PI / 2;
-      headband.position.y = 1.62;
-      group.add(headband);
-    }
+    // Gorra deportiva realista
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.19, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), accessoryMat);
+    cap.position.y = 1.64;
+    cap.rotation.x = -0.1;
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.015, 0.16), accessoryMat);
+    visor.position.set(0, 1.68, 0.14);
+    visor.rotation.x = 0.15;
+    group.add(cap);
+    group.add(visor);
 
-    // ── SHORTS ──
-    const shorts = new THREE.Mesh(new THREE.BoxGeometry(0.49, 0.22, 0.272), shortsMat);
-    shorts.position.y = 0.72;
-    group.add(shorts);
-
-    // ── PIERNAS ──
-    const legGeo = new THREE.CylinderGeometry(0.068, 0.058, 0.45, 8);
-    const leftLeg = new THREE.Mesh(legGeo, skinMat);
-    leftLeg.position.set(-0.12, 0.38, 0);
-    group.add(leftLeg);
-    const rightLeg = new THREE.Mesh(legGeo, skinMat);
-    rightLeg.position.set(0.12, 0.38, 0);
-    group.add(rightLeg);
-    group.userData.leftLeg = leftLeg;
-    group.userData.rightLeg = rightLeg;
-
-    // Calcetines
-    const sockGeo = new THREE.CylinderGeometry(0.07, 0.066, 0.16, 8);
-    const leftSock = new THREE.Mesh(sockGeo, accessoryMat);
-    leftSock.position.set(-0.12, 0.22, 0);
-    group.add(leftSock);
-    const rightSock = new THREE.Mesh(sockGeo, accessoryMat);
-    rightSock.position.set(0.12, 0.22, 0);
-    group.add(rightSock);
-
-    // ── ZAPATILLAS ──
-    const shoeGeo = new THREE.BoxGeometry(0.105, 0.065, 0.19);
-    const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
-    leftShoe.position.set(-0.12, 0.13, 0.03);
-    group.add(leftShoe);
-    const rightShoe = new THREE.Mesh(shoeGeo, shoeMat);
-    rightShoe.position.set(0.12, 0.13, 0.03);
-    group.add(rightShoe);
-    group.userData.leftShoe = leftShoe;
-    group.userData.rightShoe = rightShoe;
-
-    // ── BRAZOS ──
-    const armGeo = new THREE.CylinderGeometry(0.048, 0.04, 0.4, 8);
-
-    // Brazo izquierdo (libre)
-    const leftArm = new THREE.Mesh(armGeo, skinMat);
-    leftArm.position.set(-0.32, 1.05, 0);
-    leftArm.rotation.z = 0.3;
-    group.add(leftArm);
-    group.userData.leftArm = leftArm;
+    // ── SHORTS REALISTAS ──
+    const shortsHip = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.26), shortsMat);
+    shortsHip.position.y = 0.78;
+    group.add(shortsHip);
     
-    // Muñequera izquierda
-    const bandGeo = new THREE.CylinderGeometry(0.05, 0.048, 0.06, 8);
-    const leftWristband = new THREE.Mesh(bandGeo, accessoryMat);
-    leftWristband.position.set(-0.32, 0.92, 0);
-    leftWristband.rotation.z = 0.3;
-    group.add(leftWristband);
+    const leftShortLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.12, 8), shortsMat);
+    leftShortLeg.position.set(-0.11, 0.7, 0);
+    group.add(leftShortLeg);
+    const rightShortLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.12, 8), shortsMat);
+    rightShortLeg.position.set(0.11, 0.7, 0);
+    group.add(rightShortLeg);
 
-    // Brazo derecho (pala) — pivote
+    // ── PIERNAS ARTICULADAS (Jerarquía) ──
+    // Pierna Izquierda
+    const leftLegGroup = new THREE.Group();
+    leftLegGroup.position.set(-0.12, 0.66, 0);
+    
+    const leftThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.05, 0.28, 8), skinMat);
+    leftThigh.position.y = -0.14;
+    leftLegGroup.add(leftThigh);
+    
+    const leftCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.24, 8), skinMat);
+    leftCalf.position.set(0, -0.38, 0);
+    leftLegGroup.add(leftCalf);
+    
+    const leftSock = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.05, 0.08, 8), accessoryMat);
+    leftSock.position.set(0, -0.46, 0);
+    leftLegGroup.add(leftSock);
+    
+    const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.16), shoeMat);
+    leftShoe.position.set(0, -0.52, 0.02);
+    leftLegGroup.add(leftShoe);
+    
+    group.add(leftLegGroup);
+
+    // Pierna Derecha
+    const rightLegGroup = new THREE.Group();
+    rightLegGroup.position.set(0.12, 0.66, 0);
+    
+    const rightThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.05, 0.28, 8), skinMat);
+    rightThigh.position.y = -0.14;
+    rightLegGroup.add(rightThigh);
+    
+    const rightCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.24, 8), skinMat);
+    rightCalf.position.set(0, -0.38, 0);
+    rightLegGroup.add(rightCalf);
+    
+    const rightSock = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.05, 0.08, 8), accessoryMat);
+    rightSock.position.set(0, -0.46, 0);
+    rightLegGroup.add(rightSock);
+    
+    const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.16), shoeMat);
+    rightShoe.position.set(0, -0.52, 0.02);
+    rightLegGroup.add(rightShoe);
+    
+    group.add(rightLegGroup);
+
+    group.userData.leftLeg = leftLegGroup;
+    group.userData.rightLeg = rightLegGroup;
+
+    // ── BRAZOS REALISTAS ──
+    const leftArmPivot = new THREE.Group();
+    leftArmPivot.position.set(-0.28, 1.25, 0);
+    
+    const leftUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.038, 0.24, 8), skinMat);
+    leftUpperArm.position.y = -0.12;
+    leftArmPivot.add(leftUpperArm);
+    
+    const leftForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.03, 0.2, 8), skinMat);
+    leftForearm.position.set(0, -0.32, 0);
+    leftArmPivot.add(leftForearm);
+    
+    const leftWristband = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.038, 0.05, 8), accessoryMat);
+    leftWristband.position.set(0, -0.4, 0);
+    leftArmPivot.add(leftWristband);
+    
+    group.add(leftArmPivot);
+    group.userData.leftArm = leftArmPivot;
+
     const rightArmPivot = new THREE.Group();
-    rightArmPivot.position.set(0.28, 1.2, 0);
-    group.add(rightArmPivot);
-
-    const rightArm = new THREE.Mesh(armGeo, skinMat);
-    rightArm.position.set(0.05, -0.2, 0);
-    rightArm.rotation.z = -0.3;
-    rightArmPivot.add(rightArm);
-
-    // Muñequera derecha
-    const rightWristband = new THREE.Mesh(bandGeo, accessoryMat);
-    rightWristband.position.set(0.05, -0.32, 0);
-    rightWristband.rotation.z = -0.3;
+    rightArmPivot.position.set(0.28, 1.25, 0);
+    
+    const rightUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.038, 0.24, 8), skinMat);
+    rightUpperArm.position.y = -0.12;
+    rightArmPivot.add(rightUpperArm);
+    
+    const rightForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.03, 0.2, 8), skinMat);
+    rightForearm.position.set(0, -0.32, 0);
+    rightArmPivot.add(rightForearm);
+    
+    const rightWristband = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.038, 0.05, 8), accessoryMat);
+    rightWristband.position.set(0, -0.4, 0);
     rightArmPivot.add(rightWristband);
 
-    // ── PALA de pádel ──
+    // Pala
     const paddleGroup = new THREE.Group();
-    paddleGroup.position.set(0.1, -0.42, 0);
-
-    // Mango
+    paddleGroup.position.set(0, -0.5, 0);
+    
     const handle = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.025, 0.03, 0.22, 6),
-      new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 })
+      new THREE.CylinderGeometry(0.02, 0.024, 0.18, 6),
+      new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 })
     );
     paddleGroup.add(handle);
-
-    // Cabeza de pala (forma de lágrima/elipse)
+    
     const paddleHead = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.16, 0.14, 0.03, 16),
+      new THREE.CylinderGeometry(0.14, 0.12, 0.028, 16),
       new THREE.MeshStandardMaterial({ 
         color, 
         roughness: 0.2, 
@@ -965,39 +990,37 @@ class GameRenderer3D {
       })
     );
     paddleHead.rotation.x = Math.PI / 2;
-    paddleHead.position.y = -0.16;
+    paddleHead.position.y = -0.14;
     paddleGroup.add(paddleHead);
-
-    // Agujeros en la pala (textura)
+    
     const paddleTex = this._makePaddleTexture(color);
     const paddleFace = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.28, 0.26),
+      new THREE.PlaneGeometry(0.24, 0.22),
       new THREE.MeshStandardMaterial({
         map: paddleTex, transparent: true, side: THREE.DoubleSide,
         roughness: 0.3, metalness: 0.2
       })
     );
-    paddleFace.position.y = -0.16;
-    paddleFace.position.z = 0.02;
+    paddleFace.position.y = -0.14;
+    paddleFace.position.z = 0.016;
     paddleGroup.add(paddleFace);
-
+    
     rightArmPivot.add(paddleGroup);
+    group.add(rightArmPivot);
     group.userData.rightArmPivot = rightArmPivot;
-    group.userData.paddleGroup = paddleGroup;
 
-    // ── SOMBRA en suelo ──
+    // Sombra
     const shadow = new THREE.Mesh(
-      new THREE.CircleGeometry(0.45, 16),
+      new THREE.CircleGeometry(0.4, 16),
       new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.35, roughness: 1, depthWrite: false })
     );
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.y = 0.005;
     group.add(shadow);
 
-    // ── AURA para jugador humano ──
     if (isHuman) {
       const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.5, 0.04, 8, 28),
+        new THREE.TorusGeometry(0.45, 0.03, 8, 28),
         new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.9, transparent: true, opacity: 0.6 })
       );
       ring.rotation.x = Math.PI / 2;
@@ -1005,18 +1028,16 @@ class GameRenderer3D {
       group.add(ring);
       group.userData.ring = ring;
 
-      // Flecha indicadora sobre la cabeza
       const arrow = new THREE.Mesh(
-        new THREE.CylinderGeometry(0, 0.1, 0.18, 6),
+        new THREE.CylinderGeometry(0, 0.08, 0.16, 6),
         new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.7, transparent: true, opacity: 0.7 })
       );
-      arrow.position.y = 2.0;
-      arrow.rotation.x = Math.PI; // Apuntando hacia abajo
+      arrow.position.y = 1.95;
+      arrow.rotation.x = Math.PI;
       group.add(arrow);
       group.userData.arrow = arrow;
     }
 
-    // Nombre en userData
     group.userData.name = name;
     group.userData.isHuman = isHuman;
     group.userData.swingPhase = 0;
