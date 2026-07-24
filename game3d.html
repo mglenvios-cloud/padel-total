@@ -82,6 +82,29 @@
       inset: 0;
       background: #040812;
       overflow: hidden;
+    kbd {
+      display: inline-block;
+      padding: 2px 7px;
+      font-family: 'Rajdhani', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: #00d4ff;
+      background: #091224;
+      border: 1px solid rgba(0, 212, 255, 0.6);
+      border-radius: 5px;
+      box-shadow: 0 0 6px rgba(0, 212, 255, 0.3);
+      margin: 0 2px;
+    }
+    kbd.space {
+      color: #00ff87;
+      border-color: rgba(0, 255, 135, 0.6);
+      box-shadow: 0 0 6px rgba(0, 255, 135, 0.3);
+    }
+    kbd.gold {
+      color: #ffd700;
+      border-color: rgba(255, 215, 0, 0.6);
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
     }
     /* Badge 3D en HUD */
     #badge-3d {
@@ -138,6 +161,55 @@
 
   <!-- CANVAS THREE.JS -->
   <canvas id="game-canvas"></canvas>
+
+  <!-- PANEL DE CONTROLES TECLADO DE ALTA VISIBILIDAD -->
+  <div id="keyboard-controls-card" style="position:fixed;top:76px;left:16px;z-index:999;background:rgba(4,8,18,0.92);border:1px solid #00d4ff;border-radius:12px;padding:12px 16px;box-shadow:0 0 25px rgba(0,212,255,0.25);backdrop-filter:blur(10px);min-width:260px;color:#fff;font-family:'Outfit',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid rgba(0,212,255,0.3);padding-bottom:6px;">
+      <span style="color:#00d4ff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:1.5px;">🎮 GUÍA DE TECLADO / GOLPES</span>
+      <button id="toggle-guide-btn" onclick="toggleControlGuide()" style="background:none;border:none;color:#00d4ff;cursor:pointer;font-size:11px;font-weight:bold;">[ Ocultar ]</button>
+    </div>
+    
+    <div id="control-guide-body" style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span>🏃 Mover Jugador:</span>
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>🠘🠚</kbd></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span>🏓 Golpear / Saque (Drive):</span>
+        <div><kbd class="space">ESPACIO</kbd></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span>⚡ Remate / Smash:</span>
+        <div><kbd class="gold">SHIFT</kbd> + <kbd class="space">ESPACIO</kbd></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span>🎈 Globo (Lob):</span>
+        <div><kbd>Q</kbd></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span>📐 Bandeja / Cortado:</span>
+        <div><kbd>E</kbd></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span>🎥 Cambiar Cámara:</span>
+        <div><kbd>C</kbd></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.toggleControlGuide = function() {
+      const body = document.getElementById('control-guide-body');
+      const btn = document.getElementById('toggle-guide-btn');
+      if (body.style.display === 'none') {
+        body.style.display = 'flex';
+        btn.textContent = '[ Ocultar ]';
+      } else {
+        body.style.display = 'none';
+        btn.textContent = '[ Mostrar ]';
+      }
+    };
+  </script>
 
   <!-- BARRA INFERIOR DESPEJADA: CONTROLES Y CÁMARAS -->
   <div id="bottom-hud-controls" style="position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:999;display:flex;align-items:center;gap:12px;background:rgba(4,8,18,0.85);padding:8px 16px;border-radius:12px;border:1px solid rgba(0,212,255,0.3);backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(0,0,0,0.5);max-width:95vw;flex-wrap:wrap;justify-content:center;">
