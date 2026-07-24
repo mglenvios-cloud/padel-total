@@ -198,6 +198,13 @@
   </div>
 
   <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      setInterval(function() {
+        const tvEl = document.getElementById('tv-overlay-hud');
+        if (tvEl) tvEl.remove();
+      }, 300);
+    });
+
     window.toggleControlGuide = function() {
       const body = document.getElementById('control-guide-body');
       const btn = document.getElementById('toggle-guide-btn');
