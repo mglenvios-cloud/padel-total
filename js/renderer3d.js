@@ -28,7 +28,7 @@ class GameRenderer3D {
     try { this.characterManager = new CharacterManager(this.skeletonLoader, this.scene); } catch(e) { this.characterManager = null; console.warn('CharacterManager no disponible:', e.message); }
     try { this.broadcastManager = new BroadcastManager(this.camera); } catch(e) { this.broadcastManager = null; console.warn('BroadcastManager no disponible:', e.message); }
     try { this.graphicsSettings = new GraphicsSettings(this); } catch(e) { this.graphicsSettings = null; console.warn('GraphicsSettings no disponible:', e.message); }
-    try { this.stadiumManager = new StadiumManager(this.scene, this.envMap); if (this.stadiumManager) this.stadiumManager.buildStadium(); } catch(e) { this.stadiumManager = null; console.warn('StadiumManager no disponible:', e.message); }
+    try { this.stadiumManager = new StadiumManager(this.scene, this.envMap); } catch(e) { this.stadiumManager = null; console.warn('StadiumManager no disponible:', e.message); }
   }
 
   // TEST VISUAL: cubo brillante en el centro de la escena
@@ -521,53 +521,37 @@ class GameRenderer3D {
       }
     };
 
-    // Tribunas Laterales (Izquierda y Derecha, a lo largo de Y)
+    // Tribunas Laterales (Izquierda y Derecha)
     [-10.8, 10.8].forEach(x => {
       const dir = Math.sign(x);
       const rotY = dir > 0 ? -Math.PI / 2 : Math.PI / 2;
-      
-      for (let step = 0; step < 4; step++) {
-        const stepX = x + (dir * step * 1.2);
-        const stepY = -0.5 + step * 0.9;
-        
-        // Bloque de Grada
-        const s = new THREE.Mesh(
-          new THREE.BoxGeometry(1.2, stepY + 1.2, 30),
-          standMat
-        );
+      for (let step = 0; step < 3; step++) {
+        const stepX = x + (dir * step * 1.5);
+        const stepY = -0.5 + step * 1.1;
+        const s = new THREE.Mesh(new THREE.BoxGeometry(1.4, stepY + 1.4, 30), standMat);
         s.position.set(stepX, (stepY - 0.6) / 2, 0);
         s.receiveShadow = true;
-        s.castShadow = true;
         this.scene.add(s);
 
-        // Almacenar posiciones en lugar de crear meshes individuales
-        for (let sz = -14; sz <= 14; sz += 0.95) {
+        for (let sz = -12; sz <= 12; sz += 2.8) {
           addSeatAndSpectatorData(stepX, stepY, sz, rotY);
         }
       }
     });
 
-    // Tribunas de Fondos (Norte y Sur, a lo largo de X)
+    // Tribunas de Fondos (Norte y Sur)
     [-16.8, 16.8].forEach(z => {
       const dir = Math.sign(z);
       const rotY = dir > 0 ? Math.PI : 0;
-      
-      for (let step = 0; step < 3; step++) {
-        const stepZ = z + (dir * step * 1.2);
-        const stepY = -0.5 + step * 0.9;
-        
-        // Bloque de Grada
-        const s = new THREE.Mesh(
-          new THREE.BoxGeometry(18, stepY + 1.2, 1.2),
-          standMat
-        );
+      for (let step = 0; step < 2; step++) {
+        const stepZ = z + (dir * step * 1.5);
+        const stepY = -0.5 + step * 1.1;
+        const s = new THREE.Mesh(new THREE.BoxGeometry(18, stepY + 1.4, 1.4), standMat);
         s.position.set(0, (stepY - 0.6) / 2, stepZ);
         s.receiveShadow = true;
-        s.castShadow = true;
         this.scene.add(s);
 
-        // Almacenar posiciones
-        for (let sx = -8; sx <= 8; sx += 0.95) {
+        for (let sx = -7; sx <= 7; sx += 2.8) {
           addSeatAndSpectatorData(sx, stepY, stepZ, rotY);
         }
       }
