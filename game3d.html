@@ -222,6 +222,7 @@
 <script src="js/controls.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/ui.js"></script>
+<!-- character subsystem — src/engine/character/ es la versión canónica -->
 <script src="src/engine/character/SkeletonLoader.js"></script>
 <script src="src/engine/character/RigController.js"></script>
 <script src="src/engine/character/AnimationController.js"></script>
@@ -374,9 +375,13 @@
 <script src="src/engine/release/AssetOptimizer.js"></script>
 <script src="src/engine/release/LoadingScreen.js"></script>
 <script src="src/engine/release/WebPerformanceMonitor.js"></script>
+<!-- js/ únicos (sin duplicado en src/engine) -->
 <script src="js/TextureManager.js"></script>
 <script src="js/GraphicsSettings.js"></script>
 <script src="js/CinematicDirector.js"></script>
+<!-- ELIMINADOS js/ que duplicaban src/engine/character/: AnimationController, CharacterManager,
+     CharacterCustomizer, CharacterFactory, EquipmentManager, HumanoidPlayer,
+     LODManager, MaterialManager, SkeletonLoader, CharacterDatabase -->
 <script src="js/renderer3d.js"></script>
 <script src="js/physics3d.js"></script>
 <script src="js/ai3d.js"></script>
