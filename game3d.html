@@ -106,6 +106,13 @@
       border-color: rgba(255, 215, 0, 0.6);
       box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
     }
+    /* Desactivar cualquier panel TV Broadcast Live */
+    #tv-overlay-hud, [id*="tv-overlay"], [id*="broadcast-tv"] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
     /* Badge 3D en HUD */
     #badge-3d {
       position: absolute;
@@ -531,11 +538,11 @@
 <!-- ELIMINADOS js/ que duplicaban src/engine/character/: AnimationController, CharacterManager,
      CharacterCustomizer, CharacterFactory, EquipmentManager, HumanoidPlayer,
      LODManager, MaterialManager, SkeletonLoader, CharacterDatabase -->
-<script src="js/renderer3d.js?v=2.0"></script>
-<script src="js/physics3d.js?v=2.0"></script>
-<script src="js/ai3d.js?v=2.0"></script>
-<script src="js/career.js?v=2.0"></script>
-<script src="js/game3d.js?v=2.0"></script>
+<script src="js/renderer3d.js?v=3.0"></script>
+<script src="js/physics3d.js?v=3.0"></script>
+<script src="js/ai3d.js?v=3.0"></script>
+<script src="js/career.js?v=3.0"></script>
+<script src="js/game3d.js?v=3.0"></script>
 
 <script>
 // Set dot helper (accedido desde ui.js)
