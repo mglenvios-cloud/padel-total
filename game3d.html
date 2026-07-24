@@ -26,6 +26,9 @@
   <script>
     window.__firstError = null;
     window.onerror = function(msg, src, line, col, err) {
+      if (typeof msg === 'string' && (msg.includes('ResizeObserver') || msg.includes('Script error.'))) {
+        return true;
+      }
       if (window.__firstError) return;
       window.__firstError = { msg, src, line, col, err };
       // Mostrar en el loader si existe, o crear un overlay propio
@@ -56,7 +59,11 @@
       }
     };
     window.addEventListener('unhandledrejection', function(e) {
-      window.onerror(e.reason && e.reason.message ? e.reason.message : String(e.reason), '', 0, 0, e.reason);
+      const msg = e.reason && e.reason.message ? e.reason.message : String(e.reason);
+      if (typeof msg === 'string' && (msg.includes('ResizeObserver') || msg.includes('Script error.'))) {
+        return;
+      }
+      window.onerror(msg, '', 0, 0, e.reason);
     });
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
