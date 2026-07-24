@@ -155,7 +155,7 @@ class GameRenderer3D {
     this.sun = new THREE.DirectionalLight(0xfff8ee, 2.2);
     this.sun.position.set(2, 22, 2);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(2048, 2048);
+    this.sun.shadow.mapSize.set(1024, 1024);
     this.sun.shadow.camera.near = 1;
     this.sun.shadow.camera.far = 40;
     this.sun.shadow.camera.left = -16;
@@ -1404,9 +1404,8 @@ class GameRenderer3D {
 
     if (this.frame === 1) {
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      try { this.setQualityLevel(isMobile ? 'medio' : 'ultra'); } catch(e) {}
+      try { this.setQualityLevel(isMobile ? 'medio' : 'alto'); } catch(e) {}
       try { this._setupProfiler(); } catch(e) {}
-      try { this.setWeather('lluvia'); } catch(e) {}
     }
 
     // Actualizar clima y partículas
@@ -1437,8 +1436,8 @@ class GameRenderer3D {
       } catch(e) {}
     }
 
-    // Animar espectadores instanciados (celebración/movimiento)
-    if (this.headMesh && this.bodyMesh && this.spectatorPositions) {
+    // Animar espectadores instanciados (celebración/movimiento cada 4 frames para 60 FPS)
+    if (this.headMesh && this.bodyMesh && this.spectatorPositions && frame % 4 === 0) {
       try {
         const crowdTime = frame * 0.08;
         const dummy = this.animDummy;

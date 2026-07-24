@@ -152,13 +152,16 @@ class HumanoidPlayer {
     rightArm.rotation.x = Math.PI / 6;
     rightArmGroup.add(rightArm);
     
-    // Pala de pádel en la mano
-    const racketHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.02, 0.2, 8), shoeMat);
+    // Pala de pádel en la mano (Diseño ovalado/lágrima profesional)
+    const racketHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 0.22, 10), shoeMat);
     racketHandle.position.set(0.18, -0.32, 0.32);
     racketHandle.rotation.x = Math.PI / 3;
     rightArmGroup.add(racketHandle);
-    const racketHead = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.3, 0.03), racketMat);
-    racketHead.position.set(0.18, -0.42, 0.48);
+
+    const racketHeadGeo = new THREE.CylinderGeometry(0.13, 0.11, 0.032, 16);
+    racketHeadGeo.scale(1.0, 1.0, 1.35); // Forma de lágrima ovalada de pádel
+    const racketHead = new THREE.Mesh(racketHeadGeo, racketMat);
+    racketHead.position.set(0.18, -0.44, 0.49);
     racketHead.rotation.x = Math.PI / 3;
     rightArmGroup.add(racketHead);
 
