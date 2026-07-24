@@ -620,23 +620,27 @@ function initGame3D() {
     const loaderText = document.querySelector('#loading-3d .loading-text');
     const loaderSpinner = document.querySelector('#loading-3d .loading-spinner');
     const loaderTitle = document.querySelector('#loading-3d .loading-title');
-    
+
+    // Mensaje de error real para diagnóstico
+    const errorMsg = error && error.message ? error.message : String(error);
+    const errorStack = error && error.stack ? error.stack.split('\n').slice(0,3).join('<br>') : '';
+
     if (loaderText && loaderTitle) {
       loaderTitle.style.color = '#ff3366';
-      loaderTitle.textContent = '⚡ ERROR DE MOTOR 3D';
+      loaderTitle.textContent = '⚡ ERROR DE INICIO';
       if (loaderSpinner) loaderSpinner.style.display = 'none';
-      
+
       loaderText.innerHTML = `
-        <div style="color: rgba(255,255,255,0.7); max-width: 420px; margin: 15px auto; line-height: 1.6; text-transform: none; font-family: sans-serif; text-align: center;">
-          No se pudo inicializar WebGL. Esto suele suceder si la aceleración por hardware de tu navegador está desactivada o tu tarjeta gráfica no es compatible con el modo 3D.
+        <div style="color: rgba(255,255,255,0.85); max-width: 520px; margin: 15px auto; line-height: 1.7; text-transform: none; font-family: monospace; text-align: left; background:rgba(255,50,50,0.08); padding:12px 16px; border-radius:8px; border:1px solid rgba(255,80,80,0.3); font-size:13px;">
+          <b style="color:#ff6b6b;">ERROR:</b> ${errorMsg}<br><br>
+          <span style="color:rgba(255,255,255,0.45); font-size:11px;">${errorStack}</span>
         </div>
         <button onclick="window.location.href='game.html'+window.location.search" class="btn-primary" style="margin-top: 20px; font-weight: 700; background: linear-gradient(135deg, #ff6b35, #ff3366); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer;">
           JUGAR EN MODO 2D (SOPORTADO)
         </button>
       `;
     } else {
-      alert("Tu navegador no soporta el motor 3D. Redirigiendo al modo 2D...");
-      window.location.href = `game.html?${params.toString()}`;
+      alert("Error: " + errorMsg);
     }
   }
 }
