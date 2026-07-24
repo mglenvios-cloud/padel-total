@@ -150,123 +150,145 @@ class HumanoidPlayer {
 
     group.add(torsoGroup);
 
-    // 3. PIERNA IZQUIERDA (Cadera Y=0.88 -> Suelo Y=0.0)
-    const leftLegGroup = new THREE.Group();
-    leftLegGroup.position.set(-0.11, 0.88, 0);
+    // 3. PIERNA IZQUIERDA ARTICULADA (Cadera Y=0.88 -> Rodilla -> Tobillo Y=0.0)
+    const leftHipGroup = new THREE.Group();
+    leftHipGroup.position.set(-0.11, 0.88, 0);
 
     const leftThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.055, 0.40, 10), skinMat);
     leftThigh.position.y = -0.20;
     leftThigh.castShadow = true;
-    leftLegGroup.add(leftThigh);
+    leftHipGroup.add(leftThigh);
 
-    // Rodilla
-    const leftKnee = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), skinMat);
-    leftKnee.position.y = -0.40;
-    leftLegGroup.add(leftKnee);
+    // Articulación de Rodilla Izquierda (Joint)
+    const leftKneeJoint = new THREE.Group();
+    leftKneeJoint.position.set(0, -0.40, 0);
+
+    const leftKneeCap = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), skinMat);
+    leftKneeJoint.add(leftKneeCap);
 
     const leftCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.042, 0.38, 10), skinMat);
-    leftCalf.position.y = -0.60;
+    leftCalf.position.y = -0.20;
     leftCalf.castShadow = true;
-    leftLegGroup.add(leftCalf);
+    leftKneeJoint.add(leftCalf);
 
-    // Media blanca
     const leftSock = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.044, 0.12, 10), sockMat);
-    leftSock.position.y = -0.74;
-    leftLegGroup.add(leftSock);
+    leftSock.position.y = -0.34;
+    leftKneeJoint.add(leftSock);
 
-    // Zapatilla de Pádel
     const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.075, 0.23), shoeMat);
-    leftShoe.position.set(0, -0.84, 0.04);
+    leftShoe.position.set(0, -0.44, 0.04);
     leftShoe.castShadow = true;
-    leftLegGroup.add(leftShoe);
+    leftKneeJoint.add(leftShoe);
 
     const leftSole = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.02, 0.24), soleMat);
-    leftSole.position.set(0, -0.875, 0.04);
-    leftLegGroup.add(leftSole);
+    leftSole.position.set(0, -0.475, 0.04);
+    leftKneeJoint.add(leftSole);
 
-    group.add(leftLegGroup);
+    leftHipGroup.add(leftKneeJoint);
+    group.add(leftHipGroup);
 
-    // 4. PIERNA DERECHA
-    const rightLegGroup = new THREE.Group();
-    rightLegGroup.position.set(0.11, 0.88, 0);
+    // 4. PIERNA DERECHA ARTICULADA
+    const rightHipGroup = new THREE.Group();
+    rightHipGroup.position.set(0.11, 0.88, 0);
 
     const rightThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.055, 0.40, 10), skinMat);
     rightThigh.position.y = -0.20;
     rightThigh.castShadow = true;
-    rightLegGroup.add(rightThigh);
+    rightHipGroup.add(rightThigh);
 
-    const rightKnee = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), skinMat);
-    rightKnee.position.y = -0.40;
-    rightLegGroup.add(rightKnee);
+    // Articulación de Rodilla Derecha (Joint)
+    const rightKneeJoint = new THREE.Group();
+    rightKneeJoint.position.set(0, -0.40, 0);
+
+    const rightKneeCap = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), skinMat);
+    rightKneeJoint.add(rightKneeCap);
 
     const rightCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.042, 0.38, 10), skinMat);
-    rightCalf.position.y = -0.60;
+    rightCalf.position.y = -0.20;
     rightCalf.castShadow = true;
-    rightLegGroup.add(rightCalf);
+    rightKneeJoint.add(rightCalf);
 
     const rightSock = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.044, 0.12, 10), sockMat);
-    rightSock.position.y = -0.74;
-    rightLegGroup.add(rightSock);
+    rightSock.position.y = -0.34;
+    rightKneeJoint.add(rightSock);
 
     const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.075, 0.23), shoeMat);
-    rightShoe.position.set(0, -0.84, 0.04);
+    rightShoe.position.set(0, -0.44, 0.04);
     rightShoe.castShadow = true;
-    rightLegGroup.add(rightShoe);
+    rightKneeJoint.add(rightShoe);
 
     const rightSole = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.02, 0.24), soleMat);
-    rightSole.position.set(0, -0.875, 0.04);
-    rightLegGroup.add(rightSole);
+    rightSole.position.set(0, -0.475, 0.04);
+    rightKneeJoint.add(rightSole);
 
-    group.add(rightLegGroup);
+    rightHipGroup.add(rightKneeJoint);
+    group.add(rightHipGroup);
 
-    // 5. BRAZO IZQUIERDO (Equilibrio)
+    // 5. BRAZO IZQUIERDO ARTICULADO (Equilibrio)
     const leftArmGroup = new THREE.Group();
     leftArmGroup.position.set(-0.24, 1.45, 0);
-    const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.42, 8), shirtMat);
-    leftArm.position.set(-0.06, -0.18, 0.05);
-    leftArm.rotation.z = Math.PI / 10;
-    leftArm.rotation.x = -Math.PI / 12;
+    const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.24, 8), shirtMat);
+    leftArm.position.set(-0.04, -0.10, 0.03);
     leftArmGroup.add(leftArm);
+
+    const leftElbowJoint = new THREE.Group();
+    leftElbowJoint.position.set(-0.04, -0.22, 0.03);
+    const leftForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.032, 0.22, 8), skinMat);
+    leftForearm.position.y = -0.10;
+    leftElbowJoint.add(leftForearm);
+    leftArmGroup.add(leftElbowJoint);
     group.add(leftArmGroup);
 
-    // 6. BRAZO DERECHO + PALA DE PÁDEL PRO
+    // 6. BRAZO DERECHO ARTICULADO + PALA DE PÁDEL PRO
     const rightArmGroup = new THREE.Group();
     rightArmGroup.position.set(0.24, 1.45, 0);
 
-    const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.042, 0.44, 10), shirtMat);
-    rightArm.position.set(0.08, -0.18, 0.1);
-    rightArm.rotation.z = -Math.PI / 8;
-    rightArm.rotation.x = Math.PI / 6;
-    rightArmGroup.add(rightArm);
+    const rightBiceps = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.044, 0.24, 10), shirtMat);
+    rightBiceps.position.set(0.06, -0.10, 0.05);
+    rightArmGroup.add(rightBiceps);
+
+    // Articulación de Codo Derecho (Joint)
+    const rightElbowJoint = new THREE.Group();
+    rightElbowJoint.position.set(0.06, -0.22, 0.05);
+
+    const rightForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.036, 0.22, 10), skinMat);
+    rightForearm.position.y = -0.10;
+    rightForearm.castShadow = true;
+    rightElbowJoint.add(rightForearm);
 
     // Empuñadura Grip
     const racketHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 0.22, 10), sockMat);
-    racketHandle.position.set(0.18, -0.32, 0.32);
+    racketHandle.position.set(0.02, -0.22, 0.12);
     racketHandle.rotation.x = Math.PI / 3;
-    rightArmGroup.add(racketHandle);
+    rightElbowJoint.add(racketHandle);
 
     // Cabeza de Pádel en forma de lágrima
     const racketHeadGeo = new THREE.CylinderGeometry(0.135, 0.115, 0.032, 18);
     racketHeadGeo.scale(1.0, 1.0, 1.38);
     const racketHead = new THREE.Mesh(racketHeadGeo, racketMat);
-    racketHead.position.set(0.18, -0.44, 0.49);
+    racketHead.position.set(0.02, -0.34, 0.29);
     racketHead.rotation.x = Math.PI / 3;
     racketHead.castShadow = true;
-    rightArmGroup.add(racketHead);
+    rightElbowJoint.add(racketHead);
 
     // Marco exterior protector
     const racketFrame = new THREE.Mesh(new THREE.TorusGeometry(0.135, 0.015, 8, 20), frameMat);
-    racketFrame.position.set(0.18, -0.44, 0.49);
+    racketFrame.position.set(0.02, -0.34, 0.29);
     racketFrame.rotation.x = Math.PI / 3;
-    rightArmGroup.add(racketFrame);
+    rightElbowJoint.add(racketFrame);
 
+    rightArmGroup.add(rightElbowJoint);
     group.add(rightArmGroup);
 
-    // Guardar referencias para la máquina de animación
-    this.mesh.userData.leftLeg = leftLegGroup;
-    this.mesh.userData.rightLeg = rightLegGroup;
+    // Guardar referencias para el motor de animaciones y cinemática (IK/FK)
+    this.mesh.userData.leftLeg = leftHipGroup;
+    this.mesh.userData.rightLeg = rightHipGroup;
+    this.mesh.userData.leftKnee = leftKneeJoint;
+    this.mesh.userData.rightKnee = rightKneeJoint;
     this.mesh.userData.leftArm = leftArmGroup;
     this.mesh.userData.rightArm = rightArmGroup;
+    this.mesh.userData.leftElbow = leftElbowJoint;
+    this.mesh.userData.rightElbow = rightElbowJoint;
 
     this.proceduralMesh = group;
   }

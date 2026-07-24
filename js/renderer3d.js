@@ -1178,12 +1178,32 @@ class GameRenderer3D {
 
     const leftLeg = group.userData.leftLeg;
     const rightLeg = group.userData.rightLeg;
+    const leftKnee = group.userData.leftKnee;
+    const rightKnee = group.userData.rightKnee;
+    const rightElbow = group.userData.rightElbow;
     const torso = group.children[0];
 
     if (leftLeg && rightLeg) {
       leftLeg.rotation.x = group.userData.leftLegRot;
       rightLeg.rotation.x = group.userData.rightLegRot;
+
+      // Flexión biomecánica de rodillas al dar la zancada
+      if (leftKnee) {
+        const leftKneeFlex = group.userData.leftLegRot > 0 ? group.userData.leftLegRot * 1.3 : 0.05;
+        leftKnee.rotation.x = THREE.MathUtils.lerp(leftKnee.rotation.x || 0, leftKneeFlex, 0.25);
+      }
+      if (rightKnee) {
+        const rightKneeFlex = group.userData.rightLegRot > 0 ? group.userData.rightLegRot * 1.3 : 0.05;
+        rightKnee.rotation.x = THREE.MathUtils.lerp(rightKnee.rotation.x || 0, rightKneeFlex, 0.25);
+      }
     }
+
+    if (rightElbow) {
+      const swingT = Math.sin(group.userData.swingPhase || 0);
+      const targetElbowFlex = isSwinging ? -0.8 * swingT : -0.15;
+      rightElbow.rotation.x = THREE.MathUtils.lerp(rightElbow.rotation.x || 0, targetElbowFlex, 0.25);
+    }
+
     if (torso) {
       torso.rotation.x = group.userData.torsoRotX;
       torso.rotation.y = group.userData.torsoRotY;
