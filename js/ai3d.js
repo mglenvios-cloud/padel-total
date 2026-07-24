@@ -277,3 +277,5 @@ class AIController3D {
     return null;
   }
 }
+
+window.AIController3D = AIController3D;

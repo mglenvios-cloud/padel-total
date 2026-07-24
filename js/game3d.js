@@ -599,6 +599,8 @@ class PadelGame3D {
   }
 }
 
+window.PadelGame3D = PadelGame3D;
+
 // ── INICIALIZACIÓN ────────────────────────────────────────────
 function initGame3D() {
   if (window.gameInstance) return; // Evitar doble ejecución

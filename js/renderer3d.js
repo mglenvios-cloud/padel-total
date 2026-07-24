@@ -1482,3 +1482,5 @@ class GameRenderer3D {
     this.renderer.render(this.scene, this.camera);
   }
 }
+
+window.GameRenderer3D = GameRenderer3D;

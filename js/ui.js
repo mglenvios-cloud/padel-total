@@ -193,3 +193,5 @@ class GameUI {
     if (this.messageTimeout) clearTimeout(this.messageTimeout);
   }
 }
+
+window.GameUI = GameUI;

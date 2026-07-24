@@ -206,3 +206,5 @@ class PhysicsWorld3D {
     body.userData.inPlay = false;
   }
 }
+
+window.PhysicsWorld3D = PhysicsWorld3D;
