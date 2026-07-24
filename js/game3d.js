@@ -601,6 +601,7 @@ class PadelGame3D {
 
 // ── INICIALIZACIÓN ────────────────────────────────────────────
 function initGame3D() {
+  if (window.gameInstance) return; // Evitar doble ejecución
   const canvas = document.getElementById('game-canvas');
   if (!canvas) return;
 
@@ -618,6 +619,13 @@ function initGame3D() {
     if (mode === 'training') {
       document.getElementById('training-overlay')?.classList.add('active');
       document.getElementById('serve-indicator') && (document.getElementById('serve-indicator').style.display = 'none');
+    }
+
+    // Ocultar pantalla de carga de inmediato
+    const loader = document.getElementById('loading-3d');
+    if (loader) {
+      loader.classList.add('hidden');
+      setTimeout(() => { try { loader.remove(); } catch(e){} }, 800);
     }
   } catch (error) {
     console.error("Error al inicializar el motor 3D:", error);
@@ -652,6 +660,7 @@ function initGame3D() {
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   initGame3D();
 } else {
-  window.addEventListener('load', initGame3D);
+  document.addEventListener('DOMContentLoaded', initGame3D);
 }
+
 
