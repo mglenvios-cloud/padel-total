@@ -5,8 +5,19 @@
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (var i = 0; i < registrations.length; i++) {
-          registrations[i].unregister();
+        if (registrations.length > 0) {
+          var unregisterTasks = registrations.map(function(r) { return r.unregister(); });
+          Promise.all(unregisterTasks).then(function() {
+            if (window.caches) {
+              caches.keys().then(function(keys) {
+                keys.forEach(function(k) { caches.delete(k); });
+              });
+            }
+            if (navigator.serviceWorker.controller && !sessionStorage.getItem('sw_purged')) {
+              sessionStorage.setItem('sw_purged', '1');
+              window.location.reload();
+            }
+          });
         }
       });
     }
