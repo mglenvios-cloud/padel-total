@@ -11,11 +11,17 @@ class GameRenderer3D {
     this.particles = [];
     this.shakeIntensity = 0;
     this.shakeDecay = 0.92;
+    this.skeletonLoader = new SkeletonLoader();
     this._initRenderer();
+    this.characterManager = new CharacterManager(this.skeletonLoader, this.scene);
     this._initCamera();
+    this.broadcastManager = new BroadcastManager(this.camera);
+    this.graphicsSettings = new GraphicsSettings(this);
     this._initLighting();
     this._buildCourt();
     this._buildStadium();
+    this.stadiumManager = new StadiumManager(this.scene, this.envMap);
+    this.stadiumManager.buildStadium();
   }
 
   _initRenderer() {
@@ -827,189 +833,23 @@ class GameRenderer3D {
   // JUGADORES HUMANOIDES
   // ═══════════════════════════════════════════════════════════
   createPlayerMesh(color, name, isHuman) {
-    const group = new THREE.Group();
+    const gender = (name === 'Maya') ? 'female' : 'male';
+    const id = this.scene.children.filter(c => c.userData && c.userData.playerObj).length;
+    
+    const playerConfig = {
+      id: id,
+      team: (name === 'Maya' || isHuman) ? 0 : 1,
+      isHuman: isHuman,
+      color: color,
+      name: name,
+      gender: gender,
+      x: 0, z: 0
+    };
 
-    const skinColor = 0xd4a574;
-    const skinMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.55, metalness: 0.0 });
-    
-    const shirtCanvas = this._makeShirtTexture(color);
-    const shirtTex = new THREE.CanvasTexture(shirtCanvas);
-    const shirtMat = new THREE.MeshStandardMaterial({ 
-      map: shirtTex, 
-      roughness: 0.5, 
-      metalness: 0.1,
-      envMap: this.envMap,
-      envMapIntensity: 0.4
-    });
-    
-    const shortsMat = new THREE.MeshStandardMaterial({ color: 0x1b1f26, roughness: 0.7 });
-    const shoeMat = new THREE.MeshStandardMaterial({ color: 0xfcfcfc, roughness: 0.4 });
-    const accessoryMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+    const player = this.characterManager.createCharacter(playerConfig);
+    const group = player.getMesh();
 
-    // ── TORSO ATLÉTICO (Cono/Cilindro deportivo) ──
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.55, 8), shirtMat);
-    torso.position.y = 1.1;
-    torso.castShadow = true;
-    group.add(torso);
-
-    // ── CABEZA ──
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), skinMat);
-    head.position.y = 1.6;
-    head.castShadow = true;
-    group.add(head);
-
-    // Cabello
-    const hairMat = new THREE.MeshStandardMaterial({ color: 0x22150a, roughness: 0.85 });
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.188, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.6), hairMat);
-    hair.position.y = 1.62;
-    group.add(hair);
-
-    // Gorra deportiva realista
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.19, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), accessoryMat);
-    cap.position.y = 1.64;
-    cap.rotation.x = -0.1;
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.015, 0.16), accessoryMat);
-    visor.position.set(0, 1.68, 0.14);
-    visor.rotation.x = 0.15;
-    group.add(cap);
-    group.add(visor);
-
-    // ── SHORTS REALISTAS ──
-    const shortsHip = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.26), shortsMat);
-    shortsHip.position.y = 0.78;
-    group.add(shortsHip);
-    
-    const leftShortLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.12, 8), shortsMat);
-    leftShortLeg.position.set(-0.11, 0.7, 0);
-    group.add(leftShortLeg);
-    const rightShortLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.12, 8), shortsMat);
-    rightShortLeg.position.set(0.11, 0.7, 0);
-    group.add(rightShortLeg);
-
-    // ── PIERNAS ARTICULADAS (Jerarquía) ──
-    // Pierna Izquierda
-    const leftLegGroup = new THREE.Group();
-    leftLegGroup.position.set(-0.12, 0.66, 0);
-    
-    const leftThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.05, 0.28, 8), skinMat);
-    leftThigh.position.y = -0.14;
-    leftLegGroup.add(leftThigh);
-    
-    const leftCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.24, 8), skinMat);
-    leftCalf.position.set(0, -0.38, 0);
-    leftLegGroup.add(leftCalf);
-    
-    const leftSock = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.05, 0.08, 8), accessoryMat);
-    leftSock.position.set(0, -0.46, 0);
-    leftLegGroup.add(leftSock);
-    
-    const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.16), shoeMat);
-    leftShoe.position.set(0, -0.52, 0.02);
-    leftLegGroup.add(leftShoe);
-    
-    group.add(leftLegGroup);
-
-    // Pierna Derecha
-    const rightLegGroup = new THREE.Group();
-    rightLegGroup.position.set(0.12, 0.66, 0);
-    
-    const rightThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.05, 0.28, 8), skinMat);
-    rightThigh.position.y = -0.14;
-    rightLegGroup.add(rightThigh);
-    
-    const rightCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.24, 8), skinMat);
-    rightCalf.position.set(0, -0.38, 0);
-    rightLegGroup.add(rightCalf);
-    
-    const rightSock = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.05, 0.08, 8), accessoryMat);
-    rightSock.position.set(0, -0.46, 0);
-    rightLegGroup.add(rightSock);
-    
-    const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.16), shoeMat);
-    rightShoe.position.set(0, -0.52, 0.02);
-    rightLegGroup.add(rightShoe);
-    
-    group.add(rightLegGroup);
-
-    group.userData.leftLeg = leftLegGroup;
-    group.userData.rightLeg = rightLegGroup;
-
-    // ── BRAZOS REALISTAS ──
-    const leftArmPivot = new THREE.Group();
-    leftArmPivot.position.set(-0.28, 1.25, 0);
-    
-    const leftUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.038, 0.24, 8), skinMat);
-    leftUpperArm.position.y = -0.12;
-    leftArmPivot.add(leftUpperArm);
-    
-    const leftForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.03, 0.2, 8), skinMat);
-    leftForearm.position.set(0, -0.32, 0);
-    leftArmPivot.add(leftForearm);
-    
-    const leftWristband = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.038, 0.05, 8), accessoryMat);
-    leftWristband.position.set(0, -0.4, 0);
-    leftArmPivot.add(leftWristband);
-    
-    group.add(leftArmPivot);
-    group.userData.leftArm = leftArmPivot;
-
-    const rightArmPivot = new THREE.Group();
-    rightArmPivot.position.set(0.28, 1.25, 0);
-    
-    const rightUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.038, 0.24, 8), skinMat);
-    rightUpperArm.position.y = -0.12;
-    rightArmPivot.add(rightUpperArm);
-    
-    const rightForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.03, 0.2, 8), skinMat);
-    rightForearm.position.set(0, -0.32, 0);
-    rightArmPivot.add(rightForearm);
-    
-    const rightWristband = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.038, 0.05, 8), accessoryMat);
-    rightWristband.position.set(0, -0.4, 0);
-    rightArmPivot.add(rightWristband);
-
-    // Pala
-    const paddleGroup = new THREE.Group();
-    paddleGroup.position.set(0, -0.5, 0);
-    
-    const handle = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.02, 0.024, 0.18, 6),
-      new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 })
-    );
-    paddleGroup.add(handle);
-    
-    const paddleHead = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.14, 0.12, 0.028, 16),
-      new THREE.MeshStandardMaterial({ 
-        color, 
-        roughness: 0.2, 
-        metalness: 0.8, 
-        envMap: this.envMap, 
-        envMapIntensity: 1.8,
-        side: THREE.DoubleSide 
-      })
-    );
-    paddleHead.rotation.x = Math.PI / 2;
-    paddleHead.position.y = -0.14;
-    paddleGroup.add(paddleHead);
-    
-    const paddleTex = this._makePaddleTexture(color);
-    const paddleFace = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.24, 0.22),
-      new THREE.MeshStandardMaterial({
-        map: paddleTex, transparent: true, side: THREE.DoubleSide,
-        roughness: 0.3, metalness: 0.2
-      })
-    );
-    paddleFace.position.y = -0.14;
-    paddleFace.position.z = 0.016;
-    paddleGroup.add(paddleFace);
-    
-    rightArmPivot.add(paddleGroup);
-    group.add(rightArmPivot);
-    group.userData.rightArmPivot = rightArmPivot;
-
-    // Sombra
+    // Sombra proyectada plana en el suelo
     const shadow = new THREE.Mesh(
       new THREE.CircleGeometry(0.4, 16),
       new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.35, roughness: 1, depthWrite: false })
@@ -1042,6 +882,7 @@ class GameRenderer3D {
     group.userData.isHuman = isHuman;
     group.userData.swingPhase = 0;
     group.castShadow = true;
+
     this.scene.add(group);
     return group;
   }
@@ -1183,54 +1024,17 @@ class GameRenderer3D {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // CÁMARA DINÁMICA — Director de Transmisión TV e IA
-  // ═══════════════════════════════════════════════════════════
-  updateCamera(ballPos, dt, playState = 'rally', shotType = 'drive') {
-    let activeCam = 'tv';
-    
-    // Director IA: selecciona la mejor toma
-    if (playState === 'serve') {
-      activeCam = 'end'; // Toma de saque
-    } else if (shotType === 'smash') {
-      activeCam = 'side'; // Toma lateral de remate
-    } else if (shotType === 'lob' || ballPos.y > 3.0) {
-      activeCam = 'cenital'; // Toma elevada
+  updateCamera(ballPos, dt, playState = 'rally', shotType = 'drive', players = null, ballSpeed = 0) {
+    if (this.broadcastManager) {
+      this.broadcastManager.update(dt, ballPos, players, playState, ballSpeed, this.frame);
+      
+      // Vibración por Impactos (Camera Shake)
+      if (this.shakeIntensity > 0.01) {
+        this.camera.position.x += (Math.random() - 0.5) * this.shakeIntensity;
+        this.camera.position.y += (Math.random() - 0.5) * this.shakeIntensity * 0.5;
+        this.shakeIntensity *= this.shakeDecay;
+      }
     }
-
-    const targetPos = new THREE.Vector3();
-    const lookPos = new THREE.Vector3().copy(ballPos);
-
-    if (activeCam === 'tv') {
-      // Cámara de TV clásica deportiva (lerp suave)
-      targetPos.set(ballPos.x * 0.18, 10.8 + ballPos.y * 0.12, 17.8);
-      lookPos.set(ballPos.x * 0.15, ballPos.y * 0.1, ballPos.z * 0.08);
-    } else if (activeCam === 'end') {
-      // Detrás del jugador de fondo
-      targetPos.set(0, 9.8, 19.5);
-      lookPos.set(ballPos.x * 0.45, ballPos.y * 0.35, ballPos.z * 0.45);
-    } else if (activeCam === 'side') {
-      // Lateral baja con zoom dinámico
-      targetPos.set(13.8, 4.2 + Math.sin(this.frame * 0.008) * 1.5, ballPos.z * 0.2);
-      lookPos.set(ballPos.x * 0.5, ballPos.y * 0.8, ballPos.z * 0.6);
-    } else if (activeCam === 'cenital') {
-      // Plano picado cenital para globos
-      targetPos.set(0, 21.5, ballPos.z * 0.15);
-      lookPos.set(ballPos.x, 0, ballPos.z);
-    }
-
-    // Transiciones fluidas entre cámaras (lerp)
-    this._camTarget.lerp(targetPos, dt * 2.5);
-    this._lookTarget.lerp(lookPos, dt * 3.0);
-
-    // Vibración por Impactos (Camera Shake)
-    if (this.shakeIntensity > 0.01) {
-      this._camTarget.x += (Math.random() - 0.5) * this.shakeIntensity;
-      this._camTarget.y += (Math.random() - 0.5) * this.shakeIntensity * 0.5;
-      this.shakeIntensity *= this.shakeDecay;
-    }
-
-    this.camera.position.copy(this._camTarget);
-    this.camera.lookAt(this._lookTarget);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1248,6 +1052,23 @@ class GameRenderer3D {
 
     group.userData.lastX = group.position.x;
     group.userData.lastZ = group.position.z;
+
+    if (group.userData.playerObj) {
+      const velocity = new THREE.Vector3(dx / dt, 0, dz / dt);
+      group.userData.playerObj.update(dt, velocity, ballPos, this.camera.position);
+      
+      // Manejar animaciones específicas de golpeo
+      if (isSwinging) {
+        if (ballPos && ballPos.y > 2.2) group.userData.playerObj.playAnimation('Smash');
+        else if (ballPos && ballPos.y > 1.4) group.userData.playerObj.playAnimation('Bandeja');
+        else if (group.position.z * (ballPos ? (ballPos.z - group.position.z) : 1) < 0) group.userData.playerObj.playAnimation('Forehand');
+        else group.userData.playerObj.playAnimation('Backhand');
+      }
+
+      if (group.userData.playerObj.glbLoaded) {
+        return;
+      }
+    }
 
     // 1. Clasificación del Estado de Animación (Animation State Machine)
     let state = 'idle';
@@ -1547,6 +1368,14 @@ class GameRenderer3D {
     if (ballPos) this.updateBallTrail(ballPos, ballSpeed);
     this._updateParticles();
 
+    // Actualizar sistema modular de personajes
+    this.characterManager.update(dt, ballPos, this.camera.position);
+
+    // Actualizar sistema modular de estadio
+    if (this.stadiumManager) {
+      this.stadiumManager.update(dt, this.frame);
+    }
+
     // Animaciones de jugadores (con paso de ballPos y objeto jugador)
     players.forEach(p => {
       if (p.mesh) this.animatePlayer(p.mesh, frame, p.isSwinging, ballPos, p);
@@ -1593,7 +1422,7 @@ class GameRenderer3D {
       playState = 'serve';
     }
 
-    if (ballPos) this.updateCamera(ballPos, dt, playState, shotType);
+    if (ballPos) this.updateCamera(ballPos, dt, playState, shotType, players, ballSpeed);
 
     // Actualizar el perfilador
     this.updateProfiler(dt);
