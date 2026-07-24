@@ -36,9 +36,9 @@ class PadelGame3D {
     this.lastTime = performance.now();
     this.pointTimer = 0;
 
-    // Módulos
+    // Módulos core
     this.scoring  = new ScoringSystem();
-    this.audio    = new AudioEngine();
+    try { this.audio = new AudioEngine(); } catch(e) { this.audio = { playHit(){}, playBounce(){}, playWall(){}, playNet(){}, playStep(){}, playBreath(){}, playCrowdCheer(){}, playCrowdClap(){}, playRefereeCall(){}, playPoint(){}, playGameWon(){}, toggle(){} }; console.warn('AudioEngine no disponible, usando stub:', e.message); }
     this.input    = new InputController();
     this.ui       = new GameUI(this.scoring, this.mode);
 

@@ -11,17 +11,22 @@ class GameRenderer3D {
     this.particles = [];
     this.shakeIntensity = 0;
     this.shakeDecay = 0.92;
-    this.skeletonLoader = new SkeletonLoader();
+
+    // SkeletonLoader es opcional — si falla no detiene el motor
+    try { this.skeletonLoader = new SkeletonLoader(); } catch(e) { this.skeletonLoader = null; console.warn('SkeletonLoader no disponible:', e.message); }
+
+    // Inicializar WebGL renderer primero (crítico)
     this._initRenderer();
-    this.characterManager = new CharacterManager(this.skeletonLoader, this.scene);
     this._initCamera();
-    this.broadcastManager = new BroadcastManager(this.camera);
-    this.graphicsSettings = new GraphicsSettings(this);
     this._initLighting();
     this._buildCourt();
     this._buildStadium();
-    this.stadiumManager = new StadiumManager(this.scene, this.envMap);
-    this.stadiumManager.buildStadium();
+
+    // Subsistemas AAA opcionales — encapsulados en try/catch
+    try { this.characterManager = new CharacterManager(this.skeletonLoader, this.scene); } catch(e) { this.characterManager = null; console.warn('CharacterManager no disponible:', e.message); }
+    try { this.broadcastManager = new BroadcastManager(this.camera); } catch(e) { this.broadcastManager = null; console.warn('BroadcastManager no disponible:', e.message); }
+    try { this.graphicsSettings = new GraphicsSettings(this); } catch(e) { this.graphicsSettings = null; console.warn('GraphicsSettings no disponible:', e.message); }
+    try { this.stadiumManager = new StadiumManager(this.scene, this.envMap); if (this.stadiumManager) this.stadiumManager.buildStadium(); } catch(e) { this.stadiumManager = null; console.warn('StadiumManager no disponible:', e.message); }
   }
 
   _initRenderer() {
