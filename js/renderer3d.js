@@ -49,8 +49,8 @@ class GameRenderer3D {
     }
 
     // Tamaño explícito del renderer para evitar pantalla negra
-    const W = canvas.width || window.innerWidth;
-    const H = canvas.height || window.innerHeight;
+    const W = this.canvas.width || window.innerWidth;
+    const H = this.canvas.height || window.innerHeight;
     this.renderer.setSize(W, H, false);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
