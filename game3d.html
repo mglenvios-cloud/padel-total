@@ -358,14 +358,36 @@ GameUI.prototype._updateSetDots = function(team, setsWon) {
   });
 };
 
-// Ocultar loading
-setTimeout(() => {
+// Ocultar loading cuando el canvas tenga contenido visible
+(function waitForFirstFrame() {
   const loader = document.getElementById('loading-3d');
-  const title = document.querySelector('#loading-3d .loading-title');
-  if (title && title.textContent.includes('ERROR')) return;
-  if (loader) loader.classList.add('hidden');
-  setTimeout(() => { if(loader) loader.remove(); }, 900);
-}, 800);
+  if (!loader) return;
+  const title = loader.querySelector('.loading-title');
+  const canvas = document.getElementById('game-canvas');
+  let attempts = 0;
+  const MAX_ATTEMPTS = 120; // 6 segundos máximo a 50ms
+  function check() {
+    // Si hay error, no ocultar
+    if (title && title.textContent.includes('ERROR')) return;
+    // El motor está listo cuando gameInstance existe y el canvas tiene dimensiones válidas
+    if (window.gameInstance && canvas && canvas.width > 0 && canvas.height > 0) {
+      loader.classList.add('hidden');
+      setTimeout(() => { loader.remove(); }, 900);
+      return;
+    }
+    attempts++;
+    if (attempts < MAX_ATTEMPTS) {
+      setTimeout(check, 50);
+    } else {
+      // Timeout: ocultar de todas formas si no hay error
+      if (!title || !title.textContent.includes('ERROR')) {
+        loader.classList.add('hidden');
+        setTimeout(() => { loader.remove(); }, 900);
+      }
+    }
+  }
+  setTimeout(check, 200); // Primera comprobación tras 200ms
+})();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js')

@@ -48,10 +48,13 @@ class GameRenderer3D {
       this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: "high-performance" });
     }
 
-    // Tamaño explícito del renderer para evitar pantalla negra
-    const W = this.canvas.width || window.innerWidth;
-    const H = this.canvas.height || window.innerHeight;
+    // Tamaño explícito del renderer: usa siempre window.innerWidth/Height
+    const W = window.innerWidth;
+    const H = window.innerHeight;
     this.renderer.setSize(W, H, false);
+    // Asegurar que el canvas CSS ocupe toda la ventana
+    this.canvas.style.width = '100%';
+    this.canvas.style.height = '100%';
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;

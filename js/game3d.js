@@ -175,10 +175,9 @@ class PadelGame3D {
   }
 
   _resize() {
-    const W = this.canvas.clientWidth;
-    const H = this.canvas.clientHeight;
-    this.canvas.width = W;
-    this.canvas.height = H;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    // NO asignar canvas.width/height directamente — destruye el contexto WebGL
     this.renderer3d.resize(W, H);
   }
 
