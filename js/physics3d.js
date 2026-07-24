@@ -7,7 +7,7 @@
 class PhysicsWorld3D {
   constructor() {
     this.world = new CANNON.World();
-    this.world.gravity.set(0, -14.5, 0);
+    this.world.gravity.set(0, -18.5, 0);
     this.world.broadphase = new CANNON.NaiveBroadphase();
     this.world.allowSleep = true;
 
@@ -154,12 +154,12 @@ class PhysicsWorld3D {
     const dist = Math.sqrt(dx * dx + dz * dz) || 1;
 
     const shotConfig = {
-      drive:   { speed: 6 + power * 4,   vy: 2.0, spin: 0.4 },
-      backhand:{ speed: 5.5 + power * 3.5, vy: 2.2, spin: -0.3 },
-      volley:  { speed: 6.5 + power * 3,  vy: 1.2, spin: 0.15 },
-      lob:     { speed: 3.5 + power * 2.5, vy: 5.5, spin: -1.0 },
-      bandeja: { speed: 5 + power * 3,    vy: 3.2, spin: 0.7 },
-      smash:   { speed: 8 + power * 5,    vy: -0.5, spin: 1.5 },
+      drive:   { speed: 12 + power * 8,   vy: 3.5, spin: 0.4 },
+      backhand:{ speed: 11 + power * 7,   vy: 3.5, spin: -0.3 },
+      volley:  { speed: 14 + power * 9,   vy: 2.2, spin: 0.15 },
+      lob:     { speed: 8 + power * 5,    vy: 7.5, spin: -1.0 },
+      bandeja: { speed: 12 + power * 7,   vy: 4.5, spin: 0.7 },
+      smash:   { speed: 18 + power * 12,  vy: -1.0, spin: 1.5 },
     };
     const cfg = shotConfig[shotType] || shotConfig.drive;
 

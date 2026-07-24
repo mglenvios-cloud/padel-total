@@ -77,15 +77,14 @@ class GameRenderer3D {
     }
 
     // CORRECCIÓN: primero setPixelRatio, luego setSize con updateStyle=true
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
     this.renderer.setPixelRatio(dpr);
     const W = window.innerWidth;
     const H = window.innerHeight;
-    // updateStyle=true: Three.js setea canvas.style.width/height al tamaño lógico
     this.renderer.setSize(W, H, true);
 
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.BasicShadowMap;
 
     if (this.renderer.toneMapping !== undefined) {
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1376,7 +1375,7 @@ class GameRenderer3D {
   }
 
   resize(W, H) {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(W, H, true);
     this.camera.aspect = W / H;
