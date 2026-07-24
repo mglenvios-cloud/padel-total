@@ -2,6 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (var i = 0; i < registrations.length; i++) {
+          registrations[i].unregister();
+        }
+      });
+    }
+  </script>
   <!-- CAPTURADOR DE ERRORES GLOBAL: muestra el primer error en pantalla -->
   <script>
     window.__firstError = null;
