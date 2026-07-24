@@ -139,17 +139,28 @@
   <!-- CANVAS THREE.JS -->
   <canvas id="game-canvas"></canvas>
 
-  <!-- BADGE 3D -->
-  <div id="badge-3d">🏆 PADEL PRO EVOLUTION 2027 · AI GRAPHICS STUDIO</div>
+  <!-- BARRA INFERIOR DESPEJADA: CONTROLES Y CÁMARAS -->
+  <div id="bottom-hud-controls" style="position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:999;display:flex;align-items:center;gap:12px;background:rgba(4,8,18,0.85);padding:8px 16px;border-radius:12px;border:1px solid rgba(0,212,255,0.3);backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(0,0,0,0.5);max-width:95vw;flex-wrap:wrap;justify-content:center;">
+    
+    <!-- Guía de Controles Limpia -->
+    <div style="display:flex;align-items:center;gap:8px;font-family:'Outfit',sans-serif;font-size:11px;color:rgba(255,255,255,0.85);border-right:1px solid rgba(255,255,255,0.15);padding-right:14px;">
+      <span style="color:#00d4ff;font-weight:700;letter-spacing:1px;">🎮 CONTROLES:</span>
+      <span><b>W,A,S,D</b> Mover</span>
+      <span style="color:rgba(255,255,255,0.3)">|</span>
+      <span><b style="color:#00ff87">ESPACIO</b> Golpear / Saque</span>
+      <span style="color:rgba(255,255,255,0.3)">|</span>
+      <span><b style="color:#ffd700">SHIFT</b> Remate / Smash</span>
+    </div>
 
-  <!-- SELECTOR DE CÁMARAS PROFESIONAL -->
-  <div id="camera-selector" style="position:fixed;bottom:18px;right:18px;z-index:999;display:flex;gap:6px;background:rgba(4,8,18,0.88);padding:6px 12px;border-radius:10px;border:1px solid rgba(0,212,255,0.4);backdrop-filter:blur(8px);box-shadow:0 0 20px rgba(0,0,0,0.6);">
-    <span style="color:#00d4ff;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;margin-right:6px;align-self:center;">🎥 CÁMARA [C]:</span>
-    <button class="cam-btn active" data-mode="tv" onclick="setCameraMode('tv', this)" style="background:#00d4ff;color:#000;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;">DINÁMICA TV</button>
-    <button class="cam-btn" data-mode="alta" onclick="setCameraMode('alta', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;">ALTA (TORRE)</button>
-    <button class="cam-btn" data-mode="media" onclick="setCameraMode('media', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;">MEDIA (WPT)</button>
-    <button class="cam-btn" data-mode="baja" onclick="setCameraMode('baja', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;">BAJA (PIE PISTA)</button>
-    <button class="cam-btn" data-mode="spider" onclick="setCameraMode('spider', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;">SPIDERCAM</button>
+    <!-- Selector de Cámaras Compacto -->
+    <div id="camera-selector" style="display:flex;gap:4px;align-items:center;">
+      <span style="color:#00d4ff;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;margin-right:4px;">🎥 CÁMARA [C]:</span>
+      <button class="cam-btn active" data-mode="tv" onclick="setCameraMode('tv', this)" style="background:#00d4ff;color:#000;border:none;padding:4px 8px;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;">TV</button>
+      <button class="cam-btn" data-mode="alta" onclick="setCameraMode('alta', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:4px 8px;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;">ALTA</button>
+      <button class="cam-btn" data-mode="media" onclick="setCameraMode('media', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:4px 8px;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;">MEDIA</button>
+      <button class="cam-btn" data-mode="baja" onclick="setCameraMode('baja', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:4px 8px;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;">BAJA</button>
+      <button class="cam-btn" data-mode="spider" onclick="setCameraMode('spider', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:4px 8px;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;">SPIDER</button>
+    </div>
   </div>
 
   <script>
