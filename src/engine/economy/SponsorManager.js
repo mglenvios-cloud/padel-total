@@ -1,7 +1,8 @@
 /**
- * SponsorManager (Economy) - Controla contratos y patrocinadores deportivos profesionales.
+ * EconomySponsorManager - Controla contratos y patrocinadores deportivos profesionales.
+ * (Renombrado de SponsorManager para evitar conflicto con stadium/SponsorManager)
  */
-class SponsorManager {
+class EconomySponsorManager {
   constructor() {
     this.activeContracts = [];
   }
@@ -28,4 +29,4 @@ class SponsorManager {
   }
 }
 
-window.SponsorManager = SponsorManager;
+window.EconomySponsorManager = EconomySponsorManager;

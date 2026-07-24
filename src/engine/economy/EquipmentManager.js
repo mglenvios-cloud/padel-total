@@ -1,7 +1,8 @@
 /**
- * EquipmentManager (Economy) - Controla el equipamiento activo y sus estadísticas asociadas.
+ * EconomyEquipmentManager - Controla el equipamiento activo y sus estadísticas asociadas.
+ * (Renombrado de EquipmentManager para evitar conflicto con character/EquipmentManager)
  */
-class EquipmentManager {
+class EconomyEquipmentManager {
   constructor() {
     this.slots = {
       paddle: 'pad_base',
@@ -18,4 +19,4 @@ class EquipmentManager {
   }
 }
 
-window.EquipmentManager = EquipmentManager;
+window.EconomyEquipmentManager = EconomyEquipmentManager;
