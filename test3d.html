@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>TEST THREE.JS MÍNIMO</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #ff0000; overflow: hidden; }
+    canvas { display: block; }
+    #status {
+      position: fixed; top: 20px; left: 20px; z-index: 999;
+      font-family: monospace; font-size: 16px; color: white;
+      background: rgba(0,0,0,0.8); padding: 12px 18px; border-radius: 8px;
+      border: 2px solid #00ff00;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">⏳ Iniciando Three.js...</div>
+  <script src="js/three.min.js"></script>
+  <script>
+    const status = document.getElementById('status');
+
+    // 1. Verificar que Three.js cargó
+    if (typeof THREE === 'undefined') {
+      status.textContent = '❌ THREE no está definido — three.min.js no cargó';
+      status.style.borderColor = 'red';
+      throw new Error('THREE no definido');
+    }
+    status.textContent = '✅ THREE cargado. Creando renderer...';
+
+    // 2. Crear canvas fullscreen
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;';
+    document.body.appendChild(canvas);
+
+    // 3. Crear renderer WebGL
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight, true);
+      renderer.setClearColor(0x040f2a, 1);
+      status.textContent = '✅ WebGLRenderer creado. Construyendo escena...';
+    } catch(e) {
+      status.innerHTML = '❌ WebGLRenderer falló: ' + e.message;
+      status.style.borderColor = 'red';
+      throw e;
+    }
+
+    // 4. Escena mínima
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x040f2a);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 3, 8);
+    camera.lookAt(0, 0, 0);
+
+    // Luz fuerte
+    scene.add(new THREE.AmbientLight(0xffffff, 2));
+    const dLight = new THREE.DirectionalLight(0xffffff, 3);
+    dLight.position.set(5, 10, 5);
+    scene.add(dLight);
+
+    // Cubo verde brillante EMISSIVE (visible sin luces)
+    const cube = new THREE.Mesh(
+      new THREE.BoxGeometry(2, 2, 2),
+      new THREE.MeshStandardMaterial({
+        color: 0x00ff44,
+        emissive: 0x00ff44,
+        emissiveIntensity: 2.0
+      })
+    );
+    cube.position.set(0, 1, 0);
+    scene.add(cube);
+
+    // Suelo azul
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(20, 20),
+      new THREE.MeshStandardMaterial({ color: 0x0055aa })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    status.textContent = '✅ Escena lista. Ejecutando render loop...';
+
+    // 5. Render loop seguro
+    let frames = 0;
+    const loop = (t) => {
+      requestAnimationFrame(loop);
+      cube.rotation.y = t * 0.001;
+      renderer.render(scene, camera);
+      frames++;
+      if (frames === 1) {
+        status.textContent = '🟩 THREE.JS FUNCIONA — Cubo verde visible (frame ' + frames + ')';
+        status.style.borderColor = '#00ff44';
+      }
+      if (frames === 60) {
+        status.textContent = '🟩 THREE.JS OK — 60 frames renderizados correctamente';
+      }
+    };
+    requestAnimationFrame(loop);
+
+    // Resize
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight, true);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    });
+  </script>
+</body>
+</html>
