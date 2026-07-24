@@ -7,6 +7,8 @@ class CameraDirector {
     this.activeMode = 'broadcast';
     this.cams = new CinematicCamera();
     this.timer = 0;
+    // Look target persistente para interpolación correcta
+    this._lookTarget = new THREE.Vector3(0, 0, 0);
   }
 
   update(dt, ballPos, players, playState, frame) {
@@ -24,11 +26,10 @@ class CameraDirector {
 
     const { targetPos, lookPos } = this.cams.getPreset(this.activeMode, ballPos, humanPos, this.timer, frame);
 
-    // Interpolación de cámara
+    // Interpolación suave de posición y punto de mira
     this.camera.position.lerp(targetPos, dt * 2.0);
-    const currentLook = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion).add(this.camera.position);
-    currentLook.lerp(lookPos, dt * 3.0);
-    this.camera.lookAt(currentLook);
+    this._lookTarget.lerp(lookPos, dt * 3.0);
+    this.camera.lookAt(this._lookTarget);
   }
 }
 
