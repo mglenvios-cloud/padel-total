@@ -13,34 +13,34 @@ const AI3D_MESSAGES = {
 // Perfiles de IA por dificultad (adaptado a 3D)
 const AI3D_PROFILES = {
   easy: {
-    reactionTime: 28,      // frames entre decisiones — más lento
-    accuracy: 0.45,         // precisión de posicionamiento
-    shotVariety: 0.25,      // probabilidad de golpes especiales
-    positioningSkill: 0.35, // qué tan bien cubre la cancha
-    errorRate: 0.22,        // probabilidad de error no forzado
-    maxSpeed: 2.4,          // velocidad de movimiento — reducida
-    anticipation: 0.2,      // anticipación de trayectoria
-    hitRange: 1.4,          // rango de golpe (más fácil de pegarle)
+    reactionTime: 6,      // Reacción ágil
+    accuracy: 0.75,       // Precisión de posicionamiento
+    shotVariety: 0.60,    // Golpes especiales
+    positioningSkill: 0.70, // Cobertura de pista
+    errorRate: 0.06,      // Pocos errores
+    maxSpeed: 10.0,       // Velocidad rápida
+    anticipation: 0.65,   // Anticipación
+    hitRange: 2.0,        // Rango de golpeo ampliado
   },
   medium: {
-    reactionTime: 16,
-    accuracy: 0.65,
-    shotVariety: 0.5,
-    positioningSkill: 0.6,
-    errorRate: 0.12,
-    maxSpeed: 3.2,
-    anticipation: 0.45,
-    hitRange: 1.2,
+    reactionTime: 2,      // Reacción casi instantánea
+    accuracy: 0.88,
+    shotVariety: 0.82,
+    positioningSkill: 0.88,
+    errorRate: 0.03,
+    maxSpeed: 12.5,       // Velocidad alta
+    anticipation: 0.85,
+    hitRange: 2.2,
   },
   hard: {
-    reactionTime: 8,
-    accuracy: 0.82,
-    shotVariety: 0.72,
-    positioningSkill: 0.82,
-    errorRate: 0.05,
-    maxSpeed: 4.0,
-    anticipation: 0.7,
-    hitRange: 1.0,
+    reactionTime: 1,      // Reacción instantánea (1 frame)
+    accuracy: 0.98,
+    shotVariety: 0.95,
+    positioningSkill: 0.98,
+    errorRate: 0.01,
+    maxSpeed: 15.0,       // Velocidad máxima profesional
+    anticipation: 0.95,
+    hitRange: 2.5,
   },
 };
 

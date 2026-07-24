@@ -97,7 +97,7 @@ class PadelGame3D {
         ...c,
         mesh,
         startX: c.x, startZ: c.z,
-        speed: 9.0 + (this.difficulty === 'hard' ? 1.5 : this.difficulty === 'easy' ? -1.5 : 0),
+        speed: 12.0 + (this.difficulty === 'hard' ? 2.5 : this.difficulty === 'easy' ? -2.0 : 0),
         isSwinging: false, swingTimer: 0,
         color: c.color,
       };
