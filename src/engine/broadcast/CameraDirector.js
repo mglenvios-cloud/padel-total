@@ -11,24 +11,23 @@ class CameraDirector {
     this._lookTarget = new THREE.Vector3(0, 0, 0);
   }
 
+  setMode(mode) {
+    this.activeMode = mode;
+    console.log(`🎥 CameraDirector: Modo de cámara cambiado a -> ${mode.toUpperCase()}`);
+  }
+
   update(dt, ballPos, players, playState, frame) {
     this.timer += dt;
 
     const human = players ? players.find(p => p.isHuman) : null;
     const humanPos = human && human.mesh ? human.mesh.position : new THREE.Vector3(0, 0, 7);
 
-    // Selección IA de la mejor toma
-    if (playState === 'serve' && this.activeMode !== 'follow' && Math.random() < 0.005) {
-      this.activeMode = 'follow';
-    } else if (playState === 'rally' && this.activeMode === 'follow') {
-      this.activeMode = 'broadcast';
-    }
-
     const { targetPos, lookPos } = this.cams.getPreset(this.activeMode, ballPos, humanPos, this.timer, frame);
 
-    // Interpolación suave de posición y punto de mira
-    this.camera.position.lerp(targetPos, dt * 2.0);
-    this._lookTarget.lerp(lookPos, dt * 3.0);
+    // Interpolación veloz y reactiva para máximo dinamismo
+    const lerpSpeed = this.activeMode === 'low' ? dt * 4.5 : dt * 3.2;
+    this.camera.position.lerp(targetPos, lerpSpeed);
+    this._lookTarget.lerp(lookPos, dt * 5.0);
     this.camera.lookAt(this._lookTarget);
   }
 }

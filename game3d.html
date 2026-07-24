@@ -142,6 +142,45 @@
   <!-- BADGE 3D -->
   <div id="badge-3d">🏆 PADEL PRO EVOLUTION 2027 · AI GRAPHICS STUDIO</div>
 
+  <!-- SELECTOR DE CÁMARAS PROFESIONAL -->
+  <div id="camera-selector" style="position:fixed;bottom:18px;right:18px;z-index:999;display:flex;gap:6px;background:rgba(4,8,18,0.88);padding:6px 12px;border-radius:10px;border:1px solid rgba(0,212,255,0.4);backdrop-filter:blur(8px);box-shadow:0 0 20px rgba(0,0,0,0.6);">
+    <span style="color:#00d4ff;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;margin-right:6px;align-self:center;">🎥 CÁMARA [C]:</span>
+    <button class="cam-btn active" data-mode="tv" onclick="setCameraMode('tv', this)" style="background:#00d4ff;color:#000;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;">DINÁMICA TV</button>
+    <button class="cam-btn" data-mode="alta" onclick="setCameraMode('alta', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;">ALTA (TORRE)</button>
+    <button class="cam-btn" data-mode="media" onclick="setCameraMode('media', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;">MEDIA (WPT)</button>
+    <button class="cam-btn" data-mode="baja" onclick="setCameraMode('baja', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;">BAJA (PIE PISTA)</button>
+    <button class="cam-btn" data-mode="spider" onclick="setCameraMode('spider', this)" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;">SPIDERCAM</button>
+  </div>
+
+  <script>
+    const camModes = ['tv', 'alta', 'media', 'baja', 'spider'];
+    let currentCamIdx = 0;
+
+    window.setCameraMode = function(mode, btnEl) {
+      if (window.gameInstance && window.gameInstance.renderer3d && window.gameInstance.renderer3d.broadcastManager) {
+        window.gameInstance.renderer3d.broadcastManager.director.setMode(mode);
+      }
+      document.querySelectorAll('#camera-selector .cam-btn').forEach(btn => {
+        btn.style.background = 'rgba(255,255,255,0.1)';
+        btn.style.color = '#fff';
+      });
+      if (!btnEl) {
+        btnEl = document.querySelector(`#camera-selector .cam-btn[data-mode="${mode}"]`);
+      }
+      if (btnEl) {
+        btnEl.style.background = '#00d4ff';
+        btnEl.style.color = '#000';
+      }
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'c' || e.key === 'C') {
+        currentCamIdx = (currentCamIdx + 1) % camModes.length;
+        window.setCameraMode(camModes[currentCamIdx]);
+      }
+    });
+  </script>
+
   <!-- HUD TOP — SCOREBOARD -->
   <div id="hud-top">
     <div class="score-panel" style="--color:#00d4ff;">
