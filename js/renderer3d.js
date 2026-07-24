@@ -539,7 +539,7 @@ class GameRenderer3D {
         s.receiveShadow = true;
         this.scene.add(s);
 
-        for (let sz = -12; sz <= 12; sz += 2.8) {
+        for (let sz = -13; sz <= 13; sz += 1.6) {
           addSeatAndSpectatorData(stepX, stepY, sz, rotY);
         }
       }
@@ -557,7 +557,7 @@ class GameRenderer3D {
         s.receiveShadow = true;
         this.scene.add(s);
 
-        for (let sx = -7; sx <= 7; sx += 2.8) {
+        for (let sx = -8; sx <= 8; sx += 1.6) {
           addSeatAndSpectatorData(sx, stepY, stepZ, rotY);
         }
       }
@@ -623,6 +623,21 @@ class GameRenderer3D {
       banner.rotation.x = -Math.PI / 2;
       if (z > 0) banner.rotation.z = Math.PI;
       this.scene.add(banner);
+    });
+
+    // ── TORRES DE ILUMINACIÓN LED PROFESIONALES DEL ESTADIO ──
+    const towerMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 });
+    const lampMat  = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff4e0, emissiveIntensity: 1.5 });
+    
+    [[-12, -18], [12, -18], [-12, 18], [12, 18]].forEach(([tx, tz]) => {
+      const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 16, 8), towerMat);
+      tower.position.set(tx, 8, tz);
+      this.scene.add(tower);
+
+      const lampHead = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.4, 0.9), lampMat);
+      lampHead.position.set(tx, 16, tz);
+      lampHead.lookAt(0, 0, 0);
+      this.scene.add(lampHead);
     });
 
     // ── INSCRIPCIÓN GIGANTE EN PARED DE GRADA DERECHA ─────
