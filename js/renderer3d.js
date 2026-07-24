@@ -19,8 +19,10 @@ class GameRenderer3D {
     this._initRenderer();
     this._initCamera();
     this._initLighting();
-    this._buildCourt();
-    this._buildStadium();
+
+    // Construcción de cancha y estadio — envueltos en try/catch
+    try { this._buildCourt(); } catch(e) { console.warn('_buildCourt falló:', e.message); }
+    try { this._buildStadium(); } catch(e) { console.warn('_buildStadium falló:', e.message); }
 
     // Subsistemas AAA opcionales — encapsulados en try/catch
     try { this.characterManager = new CharacterManager(this.skeletonLoader, this.scene); } catch(e) { this.characterManager = null; console.warn('CharacterManager no disponible:', e.message); }
@@ -46,6 +48,10 @@ class GameRenderer3D {
       this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: "high-performance" });
     }
 
+    // Tamaño explícito del renderer para evitar pantalla negra
+    const W = canvas.width || window.innerWidth;
+    const H = canvas.height || window.innerHeight;
+    this.renderer.setSize(W, H, false);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
