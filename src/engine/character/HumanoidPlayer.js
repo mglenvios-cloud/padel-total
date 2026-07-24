@@ -85,91 +85,187 @@ class HumanoidPlayer {
 
   createProceduralFallback() {
     const group = new THREE.Group();
-    const skinMat = new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.6 });
-    const shirtMat = new THREE.MeshStandardMaterial({ color: this.color, roughness: 0.4 });
-    const shortsMat = new THREE.MeshStandardMaterial({ color: 0x1a202c, roughness: 0.5 });
-    const shoeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
-    const racketMat = new THREE.MeshStandardMaterial({ color: 0x00d4ff, metalness: 0.8, roughness: 0.2 });
+    
+    // Materiales PBR de alta definición
+    const skinMat   = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.55, metalness: 0.05 });
+    const hairMat   = new THREE.MeshStandardMaterial({ color: 0x2c1d11, roughness: 0.85 });
+    const shirtMat  = new THREE.MeshStandardMaterial({ color: this.color, roughness: 0.35, metalness: 0.1 });
+    const shortsMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.5 });
+    const sockMat   = new THREE.MeshStandardMaterial({ color: 0xf9fafb, roughness: 0.7 });
+    const shoeMat   = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25, metalness: 0.2 });
+    const soleMat   = new THREE.MeshStandardMaterial({ color: 0x00d4ff, roughness: 0.4 });
+    const racketMat = new THREE.MeshStandardMaterial({ color: 0x00ff87, metalness: 0.7, roughness: 0.2 });
+    const frameMat  = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 });
 
-    // Cabeza
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 12), skinMat);
-    head.position.y = 1.68;
-    head.castShadow = true;
-    group.add(head);
+    // 1. CABEZA & CUELLO
+    const headGroup = new THREE.Group();
+    headGroup.position.y = 1.68;
 
-    // Torso (Camiseta)
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.16, 0.52, 10), shirtMat);
-    torso.position.y = 1.28;
-    torso.castShadow = true;
-    group.add(torso);
+    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.135, 16, 14), skinMat);
+    headMesh.scale.set(1.0, 1.15, 1.05);
+    headMesh.castShadow = true;
+    headGroup.add(headMesh);
+
+    // Cabello / Gorra deportiva
+    const hairMesh = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), hairMat);
+    hairMesh.position.set(0, 0.02, -0.01);
+    headGroup.add(hairMesh);
+
+    // Gorra Visera opcional
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.015, 0.12), shirtMat);
+    visor.position.set(0, 0.06, 0.14);
+    visor.rotation.x = 0.15;
+    headGroup.add(visor);
+
+    // Cuello
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.12, 10), skinMat);
+    neck.position.y = -0.12;
+    headGroup.add(neck);
+
+    group.add(headGroup);
+
+    // 2. TORSO & PECHO ATLÉTICO
+    const torsoGroup = new THREE.Group();
+    torsoGroup.position.y = 1.28;
+
+    // Pecho / Camiseta
+    const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.17, 0.46, 12), shirtMat);
+    chest.castShadow = true;
+    torsoGroup.add(chest);
+
+    // Hombros (Deltoides)
+    const leftShoulder = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), shirtMat);
+    leftShoulder.position.set(-0.23, 0.18, 0);
+    torsoGroup.add(leftShoulder);
+
+    const rightShoulder = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), shirtMat);
+    rightShoulder.position.set(0.23, 0.18, 0);
+    torsoGroup.add(rightShoulder);
 
     // Pantalón corto
-    const shorts = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.18, 0.22, 10), shortsMat);
-    shorts.position.y = 0.94;
+    const shorts = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.185, 0.22, 12), shortsMat);
+    shorts.position.y = -0.34;
     shorts.castShadow = true;
-    group.add(shorts);
+    torsoGroup.add(shorts);
 
-    // Pierna Izquierda (Cadera en Y=0.88, llega hasta Y=0.0)
+    group.add(torsoGroup);
+
+    // 3. PIERNA IZQUIERDA (Cadera Y=0.88 -> Suelo Y=0.0)
     const leftLegGroup = new THREE.Group();
     leftLegGroup.position.set(-0.11, 0.88, 0);
-    const leftThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.42, 8), skinMat);
-    leftThigh.position.y = -0.21;
+
+    const leftThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.055, 0.40, 10), skinMat);
+    leftThigh.position.y = -0.20;
     leftThigh.castShadow = true;
     leftLegGroup.add(leftThigh);
-    const leftCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.42, 8), skinMat);
-    leftCalf.position.y = -0.63;
+
+    // Rodilla
+    const leftKnee = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), skinMat);
+    leftKnee.position.y = -0.40;
+    leftLegGroup.add(leftKnee);
+
+    const leftCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.042, 0.38, 10), skinMat);
+    leftCalf.position.y = -0.60;
     leftCalf.castShadow = true;
     leftLegGroup.add(leftCalf);
-    const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.22), shoeMat);
+
+    // Media blanca
+    const leftSock = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.044, 0.12, 10), sockMat);
+    leftSock.position.y = -0.74;
+    leftLegGroup.add(leftSock);
+
+    // Zapatilla de Pádel
+    const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.075, 0.23), shoeMat);
     leftShoe.position.set(0, -0.84, 0.04);
     leftShoe.castShadow = true;
     leftLegGroup.add(leftShoe);
+
+    const leftSole = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.02, 0.24), soleMat);
+    leftSole.position.set(0, -0.875, 0.04);
+    leftLegGroup.add(leftSole);
+
     group.add(leftLegGroup);
 
-    // Pierna Derecha
+    // 4. PIERNA DERECHA
     const rightLegGroup = new THREE.Group();
     rightLegGroup.position.set(0.11, 0.88, 0);
-    const rightThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.42, 8), skinMat);
-    rightThigh.position.y = -0.21;
+
+    const rightThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.055, 0.40, 10), skinMat);
+    rightThigh.position.y = -0.20;
     rightThigh.castShadow = true;
     rightLegGroup.add(rightThigh);
-    const rightCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.42, 8), skinMat);
-    rightCalf.position.y = -0.63;
+
+    const rightKnee = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), skinMat);
+    rightKnee.position.y = -0.40;
+    rightLegGroup.add(rightKnee);
+
+    const rightCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.042, 0.38, 10), skinMat);
+    rightCalf.position.y = -0.60;
     rightCalf.castShadow = true;
     rightLegGroup.add(rightCalf);
-    const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.22), shoeMat);
+
+    const rightSock = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.044, 0.12, 10), sockMat);
+    rightSock.position.y = -0.74;
+    rightLegGroup.add(rightSock);
+
+    const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.075, 0.23), shoeMat);
     rightShoe.position.set(0, -0.84, 0.04);
     rightShoe.castShadow = true;
     rightLegGroup.add(rightShoe);
+
+    const rightSole = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.02, 0.24), soleMat);
+    rightSole.position.set(0, -0.875, 0.04);
+    rightLegGroup.add(rightSole);
+
     group.add(rightLegGroup);
 
-    // Brazo Derecho + Pala de Pádel
+    // 5. BRAZO IZQUIERDO (Equilibrio)
+    const leftArmGroup = new THREE.Group();
+    leftArmGroup.position.set(-0.24, 1.45, 0);
+    const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.42, 8), shirtMat);
+    leftArm.position.set(-0.06, -0.18, 0.05);
+    leftArm.rotation.z = Math.PI / 10;
+    leftArm.rotation.x = -Math.PI / 12;
+    leftArmGroup.add(leftArm);
+    group.add(leftArmGroup);
+
+    // 6. BRAZO DERECHO + PALA DE PÁDEL PRO
     const rightArmGroup = new THREE.Group();
     rightArmGroup.position.set(0.24, 1.45, 0);
-    const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.45, 8), shirtMat);
+
+    const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.042, 0.44, 10), shirtMat);
     rightArm.position.set(0.08, -0.18, 0.1);
     rightArm.rotation.z = -Math.PI / 8;
     rightArm.rotation.x = Math.PI / 6;
     rightArmGroup.add(rightArm);
-    
-    // Pala de pádel en la mano (Diseño ovalado/lágrima profesional)
-    const racketHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 0.22, 10), shoeMat);
+
+    // Empuñadura Grip
+    const racketHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 0.22, 10), sockMat);
     racketHandle.position.set(0.18, -0.32, 0.32);
     racketHandle.rotation.x = Math.PI / 3;
     rightArmGroup.add(racketHandle);
 
-    const racketHeadGeo = new THREE.CylinderGeometry(0.13, 0.11, 0.032, 16);
-    racketHeadGeo.scale(1.0, 1.0, 1.35); // Forma de lágrima ovalada de pádel
+    // Cabeza de Pádel en forma de lágrima
+    const racketHeadGeo = new THREE.CylinderGeometry(0.135, 0.115, 0.032, 18);
+    racketHeadGeo.scale(1.0, 1.0, 1.38);
     const racketHead = new THREE.Mesh(racketHeadGeo, racketMat);
     racketHead.position.set(0.18, -0.44, 0.49);
     racketHead.rotation.x = Math.PI / 3;
+    racketHead.castShadow = true;
     rightArmGroup.add(racketHead);
+
+    // Marco exterior protector
+    const racketFrame = new THREE.Mesh(new THREE.TorusGeometry(0.135, 0.015, 8, 20), frameMat);
+    racketFrame.position.set(0.18, -0.44, 0.49);
+    racketFrame.rotation.x = Math.PI / 3;
+    rightArmGroup.add(racketFrame);
 
     group.add(rightArmGroup);
 
-    // Guardar referencias para animación
+    // Guardar referencias para la máquina de animación
     this.mesh.userData.leftLeg = leftLegGroup;
     this.mesh.userData.rightLeg = rightLegGroup;
+    this.mesh.userData.leftArm = leftArmGroup;
     this.mesh.userData.rightArm = rightArmGroup;
 
     this.proceduralMesh = group;
