@@ -188,3 +188,5 @@ class ScoringSystem {
 
   nextServe() { this.serveAttempt = 1; }
 }
+
+window.ScoringSystem = ScoringSystem;

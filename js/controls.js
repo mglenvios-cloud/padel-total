@@ -245,3 +245,5 @@ class InputController {
     });
   }
 }
+
+window.InputController = InputController;
