@@ -292,39 +292,46 @@ class GameRenderer3D {
       courtGroup.add(rh);
     });
 
-    // ── RED mejorada ─────────────────────────────────────
+    // ── RED AMARILLA DE ALTA VISIBILIDAD ───────────────────
     const netCanvas = this._makeNetCanvas();
     const netTex = new THREE.CanvasTexture(netCanvas);
     const netMat = new THREE.MeshStandardMaterial({
       map: netTex,
       transparent: true,
       side: THREE.DoubleSide,
-      color: 0xffffff,
+      color: 0xffea00, // Amarillo brillante
       alphaTest: 0.1,
-      roughness: 0.4,
-      metalness: 0.1
+      roughness: 0.3,
+      metalness: 0.2
     });
     const netMesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 0.88), netMat);
     netMesh.position.set(0, 0.44, 0);
     netMesh.rotation.y = 0;
     courtGroup.add(netMesh);
 
-    // Banda superior
-    const band = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.08, 0.05),
-      new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        emissive: 0xffffff,
-        emissiveIntensity: 0.15,
-        roughness: 0.6,
-        metalness: 0.0
-      }));
+    // Banda superior (Amarillo Neón Emisivo)
+    const bandMat = new THREE.MeshStandardMaterial({
+      color: 0xffea00,
+      emissive: 0xffd700,
+      emissiveIntensity: 0.6,
+      roughness: 0.2,
+      metalness: 0.1
+    });
+    const band = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.08, 0.06), bandMat);
     band.position.set(0, 0.93, 0);
     courtGroup.add(band);
 
-    // Postes de la red
-    const postNetGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.05, 8);
+    // Postes de la red (Amarillo Metalizado)
+    const postMat = new THREE.MeshStandardMaterial({
+      color: 0xffea00,
+      emissive: 0xffb700,
+      emissiveIntensity: 0.3,
+      metalness: 0.8,
+      roughness: 0.2
+    });
+    const postNetGeo = new THREE.CylinderGeometry(0.045, 0.045, 1.05, 12);
     [-5.1, 5.1].forEach(x => {
-      const pn = new THREE.Mesh(postNetGeo, frameMat);
+      const pn = new THREE.Mesh(postNetGeo, postMat);
       pn.position.set(x, 0.525, 0);
       pn.castShadow = true;
       courtGroup.add(pn);
@@ -480,8 +487,8 @@ class GameRenderer3D {
     c.width = 512; c.height = 128;
     const ctx = c.getContext('2d');
     ctx.clearRect(0, 0, 512, 128);
-    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255,234,0,0.95)';
+    ctx.lineWidth = 1.8;
     // Malla diagonal para aspecto más realista
     for (let x = 0; x <= 512; x += 8) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 128); ctx.stroke();
