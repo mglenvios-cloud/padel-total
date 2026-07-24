@@ -9,20 +9,8 @@ class CourtRenderer {
 
   build(width = 10, length = 20) {
     const courtGroup = new THREE.Group();
-
-    // 1. Césped artificial PBR con desgaste
-    const grassGeo = new THREE.PlaneGeometry(width * 1.2, length * 1.1);
-    const grassMat = new THREE.MeshStandardMaterial({
-      color: 0x054f2a,
-      roughness: 0.85,
-      metalness: 0.1,
-      envMap: this.envMap,
-      envMapIntensity: 0.3
-    });
-    const grass = new THREE.Mesh(grassGeo, grassMat);
-    grass.rotation.x = -Math.PI / 2;
-    grass.receiveShadow = true;
-    courtGroup.add(grass);
+    // Nota: El suelo oficial azul WPT se construye en GameRenderer3D._buildCourt()
+    // para evitar Z-fighting (parpadeo de color verde/azul) y doble renderizado.
 
     // 2. Líneas pintadas reglamentarias
     const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0.0 });

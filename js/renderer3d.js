@@ -20,9 +20,6 @@ class GameRenderer3D {
     this._initCamera();
     this._initLighting();
 
-    // TEST VISUAL INMEDIATO: cubo verde brillante para confirmar que Three.js renderiza
-    this._addTestCube();
-
     // Construcción de cancha y estadio — envueltos en try/catch
     try { this._buildCourt(); } catch(e) { console.warn('_buildCourt falló:', e.message); }
     try { this._buildStadium(); } catch(e) { console.warn('_buildStadium falló:', e.message); }
@@ -1200,7 +1197,7 @@ class GameRenderer3D {
     if (torso) {
       torso.rotation.x = group.userData.torsoRotX;
       torso.rotation.y = group.userData.torsoRotY;
-      torso.position.y = 1.1 + group.userData.bodyY;
+      torso.position.y = group.userData.bodyY;
     }
 
     // 3. Inverse Kinematics (IK)

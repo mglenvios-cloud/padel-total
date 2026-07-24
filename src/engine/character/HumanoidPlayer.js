@@ -120,7 +120,7 @@ class HumanoidPlayer {
     leftCalf.position.y = -0.63;
     leftCalf.castShadow = true;
     leftLegGroup.add(leftCalf);
-    const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.22), shoeMat);
+    const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.22), shoeMat);
     leftShoe.position.set(0, -0.84, 0.04);
     leftShoe.castShadow = true;
     leftLegGroup.add(leftShoe);
@@ -137,7 +137,7 @@ class HumanoidPlayer {
     rightCalf.position.y = -0.63;
     rightCalf.castShadow = true;
     rightLegGroup.add(rightCalf);
-    const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.22), shoeMat);
+    const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.22), shoeMat);
     rightShoe.position.set(0, -0.84, 0.04);
     rightShoe.castShadow = true;
     rightLegGroup.add(rightShoe);
