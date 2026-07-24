@@ -10,7 +10,7 @@ class TVGraphics {
   setupUI() {
     const div = document.createElement('div');
     div.id = 'tv-overlay-hud';
-    div.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999;background:linear-gradient(135deg, rgba(2,6,23,0.9), rgba(5,10,25,0.7));border:1px solid #00d4ff;color:#ffffff;padding:14px;border-radius:10px;font-family:Rajdhani, sans-serif;box-shadow:0 0 20px rgba(0,212,255,0.25);backdrop-filter:blur(8px);min-width:240px;';
+    div.style.cssText = 'position:fixed;bottom:20px;left:20px;z-index:999;background:linear-gradient(135deg, rgba(2,6,23,0.9), rgba(5,10,25,0.7));border:1px solid #00d4ff;color:#ffffff;padding:14px;border-radius:10px;font-family:Rajdhani, sans-serif;box-shadow:0 0 20px rgba(0,212,255,0.25);backdrop-filter:blur(8px);min-width:220px;pointer-events:none;';
     
     div.innerHTML = `
       <div style="font-size:10px;color:#00d4ff;letter-spacing:2px;font-weight:bold;margin-bottom:4px;">BROADCAST TV LIVE</div>
