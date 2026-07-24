@@ -577,18 +577,23 @@ class PadelGame3D {
 
   // ── RENDER ─────────────────────────────────────────────────
   render(dt) {
-    const ballPos = this.ballMesh.visible ? this.physics.ballBody.position : { x: 0, y: 0.5, z: 0 };
-    this.renderer3d.render(ballPos, this.players, this.ballSpeed, this.frame, dt);
+    try {
+      const ballPos = this.ballMesh && this.ballMesh.visible && this.physics && this.physics.ballBody
+        ? this.physics.ballBody.position
+        : { x: 0, y: 0.5, z: 0 };
+      this.renderer3d.render(ballPos, this.players, this.ballSpeed, this.frame, dt);
+    } catch(e) { console.warn('[render] error:', e.message); }
   }
 
   // ── GAME LOOP ──────────────────────────────────────────────
   start() {
     const loop = (now) => {
+      // RAF primero: aunque update/render fallen, el próximo frame sigue programado
+      requestAnimationFrame(loop);
       const dt = Math.min((now - this.lastTime) / 1000, 0.05);
       this.lastTime = now;
-      this.update(dt);
-      this.render(dt);
-      requestAnimationFrame(loop);
+      try { this.update(dt); } catch(e) { console.warn('[update] error:', e.message); }
+      try { this.render(dt); } catch(e) { console.warn('[render] error:', e.message); }
     };
     requestAnimationFrame(loop);
   }
