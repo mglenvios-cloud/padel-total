@@ -2,6 +2,43 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <!-- CAPTURADOR DE ERRORES GLOBAL: muestra el primer error en pantalla -->
+  <script>
+    window.__firstError = null;
+    window.onerror = function(msg, src, line, col, err) {
+      if (window.__firstError) return;
+      window.__firstError = { msg, src, line, col, err };
+      // Mostrar en el loader si existe, o crear un overlay propio
+      var show = function() {
+        var loader = document.getElementById('loading-3d');
+        var title = loader && loader.querySelector('.loading-title');
+        var text  = loader && loader.querySelector('.loading-text');
+        var spinner = loader && loader.querySelector('.loading-spinner');
+        var file = (src || '').split('/').pop();
+        var info = msg + '<br><span style="font-size:11px;color:#ff9999">' + file + ':' + line + ':' + col + '</span>';
+        if (title) {
+          title.style.color = '#ff3366';
+          title.textContent = '⚠ ERROR JS';
+          if (spinner) spinner.style.display = 'none';
+          if (text) text.innerHTML = '<div style="max-width:480px;margin:0 auto;background:rgba(255,30,30,0.1);border:1px solid #ff3366;border-radius:8px;padding:14px 18px;font-family:monospace;font-size:13px;text-align:left;color:#ffcdd2;line-height:1.7">' + info + '</div>';
+        } else {
+          // Fallback: overlay propio
+          var d = document.createElement('div');
+          d.style.cssText = 'position:fixed;inset:0;background:#040812;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:monospace;color:#ffcdd2;padding:30px;';
+          d.innerHTML = '<div style="max-width:520px;background:rgba(255,30,30,0.12);border:1px solid #ff3366;border-radius:10px;padding:20px;font-size:13px;line-height:1.8"><b style="color:#ff3366;font-size:16px">⚠ ERROR JS</b><br><br>' + info + '</div>';
+          document.body.appendChild(d);
+        }
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', show);
+      } else {
+        show();
+      }
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+      window.onerror(e.reason && e.reason.message ? e.reason.message : String(e.reason), '', 0, 0, e.reason);
+    });
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Padel Pro Evolution 2027 — AI Graphics Studio</title>
   <meta name="description" content="Padel Pro Evolution 2027 — Partida 3D en curso" />
