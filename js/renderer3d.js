@@ -1395,7 +1395,9 @@ class GameRenderer3D {
   }
 
   resize(W, H) {
-    this.renderer.setSize(W, H, false);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.renderer.setPixelRatio(dpr);
+    this.renderer.setSize(W, H, true);
     this.camera.aspect = W / H;
     this.camera.updateProjectionMatrix();
   }
