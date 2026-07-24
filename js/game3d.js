@@ -191,21 +191,18 @@ class PadelGame3D {
 
     if (this.state === STATE3D.TRAINING) { this._updateTraining(dt); return; }
 
-    // Grabación de Replay Buffer en tiempo real
+    // Grabación de Replay Buffer en tiempo real (Cero asignación de memoria / 60 FPS)
     if (this.state === STATE3D.IN_PLAY || this.state === STATE3D.WAITING_SERVE) {
       if (!this.replayBuffer) this.replayBuffer = [];
       const bp = this.physics.ballBody.position;
       this.replayBuffer.push({
-        ballPos: new THREE.Vector3(bp.x, bp.y, bp.z),
-        ballSpeed: this.ballSpeed,
-        players: this.players.map(p => ({
-          x: p.mesh.position.x,
-          z: p.mesh.position.z,
-          isSwinging: p.isSwinging,
-          animState: p.mesh.userData.animState
-        }))
+        bx: bp.x, by: bp.y, bz: bp.z,
+        px0: this.players[0].mesh.position.x, pz0: this.players[0].mesh.position.z,
+        px1: this.players[1].mesh.position.x, pz1: this.players[1].mesh.position.z,
+        px2: this.players[2].mesh.position.x, pz2: this.players[2].mesh.position.z,
+        px3: this.players[3].mesh.position.x, pz3: this.players[3].mesh.position.z,
       });
-      if (this.replayBuffer.length > 500) this.replayBuffer.shift();
+      if (this.replayBuffer.length > 250) this.replayBuffer.shift();
     }
 
     if (this.state === STATE3D.WAITING_SERVE) { this._updateServe(dt); return; }
@@ -213,43 +210,7 @@ class PadelGame3D {
     if (this.state === STATE3D.POINT_SCORED) {
       this.pointTimer -= dt;
       if (this.pointTimer <= 0) {
-        this.isReplaying = false;
-        const repEl = document.getElementById('replay-indicator');
-        if (repEl) repEl.style.display = 'none';
         this._resetAfterPoint();
-      }
-      
-      // Reproducción de Replay en Cámara Lenta (Replay System)
-      if (this.replayBuffer && this.replayBuffer.length > 50) {
-        if (!this.isReplaying) {
-          this.isReplaying = true;
-          this.replayIndex = Math.max(0, this.replayBuffer.length - 180);
-        }
-        const frameData = this.replayBuffer[this.replayIndex];
-        if (frameData) {
-          this.ballMesh.position.copy(frameData.ballPos);
-          this.ballMesh.visible = true;
-          this.players.forEach((p, idx) => {
-            const pData = frameData.players[idx];
-            if (pData) {
-              p.mesh.position.x = pData.x;
-              p.mesh.position.z = pData.z;
-              p.isSwinging = pData.isSwinging;
-              p.mesh.userData.animState = pData.animState;
-            }
-          });
-          
-          const repEl = document.getElementById('replay-indicator');
-          if (repEl) repEl.style.display = 'block';
-          
-          if (this.frame % 2 === 0) {
-            this.replayIndex++;
-            if (this.replayIndex >= this.replayBuffer.length) {
-              this.isReplaying = false;
-              if (repEl) repEl.style.display = 'none';
-            }
-          }
-        }
       }
       return;
     }
@@ -511,7 +472,7 @@ class PadelGame3D {
     }
 
     this.state = STATE3D.POINT_SCORED;
-    this.pointTimer = 2.5; // Más tiempo para respirar entre puntos
+    this.pointTimer = 1.0; // Transición rápida de 1s
     this.ui.updateScoreboard();
   }
 
