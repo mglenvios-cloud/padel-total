@@ -432,9 +432,11 @@ GameUI.prototype._updateSetDots = function(team, setsWon) {
 })();
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js')
-    .then(reg => console.log('Service Worker: Registrado con éxito.', reg))
-    .catch(err => console.warn('Service Worker: Error de registro.', err));
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    for (let reg of registrations) {
+      reg.unregister();
+    }
+  });
 }
 </script>
 </body>
