@@ -656,6 +656,7 @@ class GameRenderer3D {
     }
 
     // ── 4 POSTES DE LUZ CURVOS CON ENFOQUE DIRECTO ──────────
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4, metalness: 0.7 });
     const lightPositions = [
       { lx: -5.15, lz: -4.0 },
       { lx: 5.15, lz: -4.0 },
