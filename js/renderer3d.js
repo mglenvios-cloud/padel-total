@@ -1364,54 +1364,58 @@ class GameRenderer3D {
 
     if (this.frame === 1) {
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      this.setQualityLevel(isMobile ? 'medio' : 'ultra');
-      this._setupProfiler();
-      this.setWeather('lluvia');
+      try { this.setQualityLevel(isMobile ? 'medio' : 'ultra'); } catch(e) {}
+      try { this._setupProfiler(); } catch(e) {}
+      try { this.setWeather('lluvia'); } catch(e) {}
     }
 
     // Actualizar clima y partículas
-    this._updateWeather();
-    if (ballPos) this.updateBallTrail(ballPos, ballSpeed);
-    this._updateParticles();
+    try { this._updateWeather(); } catch(e) {}
+    if (ballPos) try { this.updateBallTrail(ballPos, ballSpeed); } catch(e) {}
+    try { this._updateParticles(); } catch(e) {}
 
     // Actualizar sistema modular de personajes
-    this.characterManager.update(dt, ballPos, this.camera.position);
+    if (this.characterManager) {
+      try { this.characterManager.update(dt, ballPos, this.camera.position); } catch(e) {}
+    }
 
     // Actualizar sistema modular de estadio
     if (this.stadiumManager) {
-      this.stadiumManager.update(dt, this.frame);
+      try { this.stadiumManager.update(dt, this.frame); } catch(e) {}
     }
 
     // Animaciones de jugadores (con paso de ballPos y objeto jugador)
     players.forEach(p => {
-      if (p.mesh) this.animatePlayer(p.mesh, frame, p.isSwinging, ballPos, p);
+      if (p.mesh) try { this.animatePlayer(p.mesh, frame, p.isSwinging, ballPos, p); } catch(e) {}
     });
 
     // Árbitro head-tracking
     if (this.refereeHead && ballPos) {
-      const relBall = new THREE.Vector3().copy(ballPos).sub(this.refereeGroup.position);
-      this.refereeHead.rotation.y = THREE.MathUtils.lerp(this.refereeHead.rotation.y, Math.atan2(relBall.x, relBall.z), 0.15);
+      try {
+        const relBall = new THREE.Vector3().copy(ballPos).sub(this.refereeGroup.position);
+        this.refereeHead.rotation.y = THREE.MathUtils.lerp(this.refereeHead.rotation.y, Math.atan2(relBall.x, relBall.z), 0.15);
+      } catch(e) {}
     }
 
     // Animar espectadores instanciados (celebración/movimiento)
     if (this.headMesh && this.bodyMesh && this.spectatorPositions) {
-      const crowdTime = frame * 0.08;
-      const dummy = this.animDummy;
-      this.spectatorPositions.forEach((pos, idx) => {
-        const offset = Math.sin(crowdTime + idx * 0.5) * 0.06;
-        
-        dummy.position.set(pos.x, pos.y + 0.38 + Math.max(0, offset), pos.z);
-        dummy.rotation.set(0, pos.rotY, 0);
-        dummy.updateMatrix();
-        this.headMesh.setMatrixAt(idx, dummy.matrix);
-
-        dummy.position.set(pos.x, pos.y + 0.1 + Math.max(0, offset), pos.z);
-        dummy.rotation.set(0, pos.rotY, 0);
-        dummy.updateMatrix();
-        this.bodyMesh.setMatrixAt(idx, dummy.matrix);
-      });
-      this.headMesh.instanceMatrix.needsUpdate = true;
-      this.bodyMesh.instanceMatrix.needsUpdate = true;
+      try {
+        const crowdTime = frame * 0.08;
+        const dummy = this.animDummy;
+        this.spectatorPositions.forEach((pos, idx) => {
+          const offset = Math.sin(crowdTime + idx * 0.5) * 0.06;
+          dummy.position.set(pos.x, pos.y + 0.38 + Math.max(0, offset), pos.z);
+          dummy.rotation.set(0, pos.rotY, 0);
+          dummy.updateMatrix();
+          this.headMesh.setMatrixAt(idx, dummy.matrix);
+          dummy.position.set(pos.x, pos.y + 0.1 + Math.max(0, offset), pos.z);
+          dummy.rotation.set(0, pos.rotY, 0);
+          dummy.updateMatrix();
+          this.bodyMesh.setMatrixAt(idx, dummy.matrix);
+        });
+        this.headMesh.instanceMatrix.needsUpdate = true;
+        this.bodyMesh.instanceMatrix.needsUpdate = true;
+      } catch(e) {}
     }
 
     // Deducir estado de la jugada para el Director IA de Cámara
@@ -1424,16 +1428,16 @@ class GameRenderer3D {
         }
       }
     });
-    if (!this.ballMesh.visible || ballSpeed < 1.0) {
+    if (!this.ballMesh || !this.ballMesh.visible || ballSpeed < 1.0) {
       playState = 'serve';
     }
 
-    if (ballPos) this.updateCamera(ballPos, dt, playState, shotType, players, ballSpeed);
+    if (ballPos) try { this.updateCamera(ballPos, dt, playState, shotType, players, ballSpeed); } catch(e) {}
 
     // Actualizar el perfilador
-    this.updateProfiler(dt);
+    try { this.updateProfiler(dt); } catch(e) {}
 
-    // Renderizado
+    // Renderizado principal — siempre se ejecuta
     this.renderer.render(this.scene, this.camera);
   }
 }
