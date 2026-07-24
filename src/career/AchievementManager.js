@@ -1,4 +1,4 @@
-class AchievementManager {
+class CareerAchievementManager {
   constructor() {
     this.achievements = this.generateAchievementsList();
   }

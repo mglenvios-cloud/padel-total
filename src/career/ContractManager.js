@@ -1,4 +1,4 @@
-class ContractManager {
+class CareerContractManager {
   constructor() {
     this.contracts = [];
   }

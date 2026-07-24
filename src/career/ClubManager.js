@@ -1,4 +1,4 @@
-class ClubManager {
+class CareerClubManager {
   constructor(data = {}) {
     this.name = data.name || "Club Padel Elite";
     this.facilitiesLevel = data.facilitiesLevel || 1;

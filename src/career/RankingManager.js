@@ -1,4 +1,4 @@
-class RankingManager {
+class CareerRankingManager {
   constructor() {
     this.globalRankings = [];
   }

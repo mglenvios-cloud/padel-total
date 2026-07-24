@@ -1,4 +1,4 @@
-class CoachManager {
+class CareerCoachManager {
   static analyzeHeatmap(ballPositions = []) {
     return ballPositions.map(pos => ({
       x: pos.x,

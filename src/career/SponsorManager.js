@@ -1,4 +1,4 @@
-class SponsorManager {
+class CareerSponsorManager {
   constructor() {
     this.sponsors = ["Bullpadel", "Nike", "Adidas", "Head"];
     this.activeContracts = [];
