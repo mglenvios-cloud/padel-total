@@ -20,6 +20,9 @@ class GameRenderer3D {
     this._initCamera();
     this._initLighting();
 
+    // TEST VISUAL INMEDIATO: cubo verde brillante para confirmar que Three.js renderiza
+    this._addTestCube();
+
     // Construcción de cancha y estadio — envueltos en try/catch
     try { this._buildCourt(); } catch(e) { console.warn('_buildCourt falló:', e.message); }
     try { this._buildStadium(); } catch(e) { console.warn('_buildStadium falló:', e.message); }
@@ -29,6 +32,29 @@ class GameRenderer3D {
     try { this.broadcastManager = new BroadcastManager(this.camera); } catch(e) { this.broadcastManager = null; console.warn('BroadcastManager no disponible:', e.message); }
     try { this.graphicsSettings = new GraphicsSettings(this); } catch(e) { this.graphicsSettings = null; console.warn('GraphicsSettings no disponible:', e.message); }
     try { this.stadiumManager = new StadiumManager(this.scene, this.envMap); if (this.stadiumManager) this.stadiumManager.buildStadium(); } catch(e) { this.stadiumManager = null; console.warn('StadiumManager no disponible:', e.message); }
+  }
+
+  // TEST VISUAL: cubo brillante en el centro de la escena
+  _addTestCube() {
+    const geo = new THREE.BoxGeometry(2, 2, 2);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x00ff44,
+      emissive: 0x00aa22,
+      emissiveIntensity: 1.0,
+      roughness: 0.3,
+      metalness: 0.5
+    });
+    this._testCube = new THREE.Mesh(geo, mat);
+    this._testCube.position.set(0, 1, 0);
+    this._testCube.name = 'TEST_CUBE';
+    this.scene.add(this._testCube);
+    // Se elimina automáticamente después de 5 segundos
+    setTimeout(() => {
+      if (this._testCube) {
+        this.scene.remove(this._testCube);
+        this._testCube = null;
+      }
+    }, 5000);
   }
 
   _initRenderer() {
@@ -45,29 +71,35 @@ class GameRenderer3D {
     
     if (!initialized) {
       console.log("AI Graphics Studio: Initializing WebGLRenderer...");
-      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: "high-performance" });
+      this.renderer = new THREE.WebGLRenderer({
+        canvas: this.canvas,
+        antialias: true,
+        powerPreference: 'high-performance',
+        alpha: false
+      });
     }
 
-    // Tamaño explícito del renderer: usa siempre window.innerWidth/Height
+    // CORRECCIÓN: primero setPixelRatio, luego setSize con updateStyle=true
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.renderer.setPixelRatio(dpr);
     const W = window.innerWidth;
     const H = window.innerHeight;
-    this.renderer.setSize(W, H, false);
-    // Asegurar que el canvas CSS ocupe toda la ventana
-    this.canvas.style.width = '100%';
-    this.canvas.style.height = '100%';
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // updateStyle=true: Three.js setea canvas.style.width/height al tamaño lógico
+    this.renderer.setSize(W, H, true);
+
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    
+
     if (this.renderer.toneMapping !== undefined) {
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.renderer.toneMappingExposure = 1.35;
     }
-    
+
+    // Fondo oscuro azul (no puro negro para distinguir si Three.js está activo)
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x02050b);
-    this.scene.fog = new THREE.FogExp2(0x02050b, 0.007);
-    
+    this.scene.background = new THREE.Color(0x040f2a);
+    this.scene.fog = new THREE.FogExp2(0x040f2a, 0.007);
+
     // Generar y almacenar el mapa de entorno procedimental
     this.envMap = this._makeEnvMap();
   }
