@@ -85,35 +85,89 @@ class HumanoidPlayer {
 
   createProceduralFallback() {
     const group = new THREE.Group();
-    const skinMat = new THREE.MeshStandardMaterial({ color: 0xd4a574 });
-    const shirtMat = new THREE.MeshStandardMaterial({ color: this.color });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.6 });
+    const shirtMat = new THREE.MeshStandardMaterial({ color: this.color, roughness: 0.4 });
+    const shortsMat = new THREE.MeshStandardMaterial({ color: 0x1a202c, roughness: 0.5 });
+    const shoeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+    const racketMat = new THREE.MeshStandardMaterial({ color: 0x00d4ff, metalness: 0.8, roughness: 0.2 });
 
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.55, 8), shirtMat);
-    torso.position.y = 1.1;
-    torso.castShadow = true;
-    group.add(torso);
-
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), skinMat);
-    head.position.y = 1.6;
+    // Cabeza
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 12), skinMat);
+    head.position.y = 1.68;
     head.castShadow = true;
     group.add(head);
 
+    // Torso (Camiseta)
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.16, 0.52, 10), shirtMat);
+    torso.position.y = 1.28;
+    torso.castShadow = true;
+    group.add(torso);
+
+    // Pantalón corto
+    const shorts = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.18, 0.22, 10), shortsMat);
+    shorts.position.y = 0.94;
+    shorts.castShadow = true;
+    group.add(shorts);
+
+    // Pierna Izquierda (Cadera en Y=0.88, llega hasta Y=0.0)
     const leftLegGroup = new THREE.Group();
-    leftLegGroup.position.set(-0.12, 0.66, 0);
-    const leftThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.05, 0.28, 8), skinMat);
-    leftThigh.position.y = -0.14;
+    leftLegGroup.position.set(-0.11, 0.88, 0);
+    const leftThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.42, 8), skinMat);
+    leftThigh.position.y = -0.21;
+    leftThigh.castShadow = true;
     leftLegGroup.add(leftThigh);
+    const leftCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.42, 8), skinMat);
+    leftCalf.position.y = -0.63;
+    leftCalf.castShadow = true;
+    leftLegGroup.add(leftCalf);
+    const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.22), shoeMat);
+    leftShoe.position.set(0, -0.84, 0.04);
+    leftShoe.castShadow = true;
+    leftLegGroup.add(leftShoe);
     group.add(leftLegGroup);
 
+    // Pierna Derecha
     const rightLegGroup = new THREE.Group();
-    rightLegGroup.position.set(0.12, 0.66, 0);
-    const rightThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.05, 0.28, 8), skinMat);
-    rightThigh.position.y = -0.14;
+    rightLegGroup.position.set(0.11, 0.88, 0);
+    const rightThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.42, 8), skinMat);
+    rightThigh.position.y = -0.21;
+    rightThigh.castShadow = true;
     rightLegGroup.add(rightThigh);
+    const rightCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.42, 8), skinMat);
+    rightCalf.position.y = -0.63;
+    rightCalf.castShadow = true;
+    rightLegGroup.add(rightCalf);
+    const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.22), shoeMat);
+    rightShoe.position.set(0, -0.84, 0.04);
+    rightShoe.castShadow = true;
+    rightLegGroup.add(rightShoe);
     group.add(rightLegGroup);
 
-    group.userData.leftLeg = leftLegGroup;
-    group.userData.rightLeg = rightLegGroup;
+    // Brazo Derecho + Pala de Pádel
+    const rightArmGroup = new THREE.Group();
+    rightArmGroup.position.set(0.24, 1.45, 0);
+    const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.45, 8), shirtMat);
+    rightArm.position.set(0.08, -0.18, 0.1);
+    rightArm.rotation.z = -Math.PI / 8;
+    rightArm.rotation.x = Math.PI / 6;
+    rightArmGroup.add(rightArm);
+    
+    // Pala de pádel en la mano
+    const racketHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.02, 0.2, 8), shoeMat);
+    racketHandle.position.set(0.18, -0.32, 0.32);
+    racketHandle.rotation.x = Math.PI / 3;
+    rightArmGroup.add(racketHandle);
+    const racketHead = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.3, 0.03), racketMat);
+    racketHead.position.set(0.18, -0.42, 0.48);
+    racketHead.rotation.x = Math.PI / 3;
+    rightArmGroup.add(racketHead);
+
+    group.add(rightArmGroup);
+
+    // Guardar referencias para animación
+    this.mesh.userData.leftLeg = leftLegGroup;
+    this.mesh.userData.rightLeg = rightLegGroup;
+    this.mesh.userData.rightArm = rightArmGroup;
 
     this.proceduralMesh = group;
   }
